@@ -1,0 +1,37 @@
+{
+    "manifest_version": 3,
+    "name": "My Chrome Extension",
+    "version": "1.0",
+    "description": "A simple Chrome extension with a popup",
+    "background": {"service_worker": "background.js"},
+    "permissions": [
+      "activeTab",
+      "scripting",
+      "tabs"
+    ],
+    "web_accessible_resources": [{
+      "resources": ["images/camera.png","timer.js"],
+      "matches": ["<all_urls>"]
+    }],
+    "host_permissions": ["https://*/*"],
+    "action": {
+      "default_popup": "popup.html",
+      "default_icon": {
+        "16": "images/icon16.png",
+        "48": "images/icon48.png",
+        "128": "images/icon128.png"
+      }
+    },
+    "icons": {
+      "16": "images/icon16.png",
+      "48": "images/icon48.png",
+      "128": "images/icon128.png"
+    },
+    "content_scripts": [
+      {
+        "matches": ["<all_urls>"],
+        "js": ["content.js"]
+      }
+    ]
+  }
+  
