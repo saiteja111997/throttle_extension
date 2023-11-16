@@ -54,12 +54,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   const cameraButton = document.createElement("label");
   cameraButton.htmlFor = "screenshotInput";
   cameraButton.style.cursor = "pointer"; // Change cursor to pointer
-  // cameraButton.style.display = "inline-block"; // Make it an inline block
-  // cameraButton.style.width = "40px"; // Adjust the width as needed
-  // cameraButton.style.height = "40px"; // Adjust the height as needed
-  // cameraButton.style.textAlign = "center"; // Center text
-  // cameraButton.style.lineHeight = "40px"; // Center text vertically
-  // cameraButton.style.color = "Black"; // Button text color
+  
+
   iconUrl = chrome.runtime.getURL("images/camera.png");
   cameraButton.innerHTML =  '<img src = iconUrl alt="Camera">';
   const screenshotInput = document.createElement("input");
@@ -189,6 +185,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     });
 
     document.body.appendChild(timerContainer);
+
+    startStopButton.click();
 
 
   });
