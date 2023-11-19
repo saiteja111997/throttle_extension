@@ -1,15 +1,54 @@
-chrome.runtime.onInstalled.addListener(async () => {
-  const manifest = chrome.runtime.getManifest();
+// background.js
 
-  for (const contentScript of manifest.content_scripts) {
-    const tabs = await chrome.tabs.query({ url: contentScript.matches });
+// Function to send a message to all tabs
+function sendMessageToAllTabs(message) {
+  chrome.tabs.query({}, (tabs) => {
+    tabs.forEach((tab) => {
+      chrome.tabs.sendMessage(tab.id, message);
+    });
+  });
+}
 
-    for (const tab of tabs) {
-      // Inject the content script into the matching tabs
+// background.js
+
+chrome.runtime.onInstalled.addListener(() => {
+  console.log("Injecting content scripts into all tabs");
+
+  // Get the manifest content scripts
+  const contentScripts = chrome.runtime.getManifest().content_scripts;
+
+  // Function to inject content scripts into a tab
+  const injectContentScripts = (tabId) => {
+    for (const contentScript of contentScripts) {
       chrome.scripting.executeScript({
-        target: { tabId: tab.id },
+        target: { tabId },
         files: contentScript.js,
+      }, () => {
+        if (chrome.runtime.lastError) {
+          console.error(`Error injecting script: ${chrome.runtime.lastError.message}`);
+        } else {
+          console.log(`Script ${contentScript.js[0]} injected into tab ${tabId}`);
+        }
       });
     }
+  };
+
+  // Iterate through all open tabs and inject content scripts
+  chrome.tabs.query({}, (tabs) => {
+    for (const tab of tabs) {
+      injectContentScripts(tab.id);
+    }
+  });
+});
+
+
+
+// Listen for timer state updates from content scripts
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message.action === "updateTimerState") {
+    console.log("Received a message from content script!!");
+    
+    // Send the message to all tabs
+    sendMessageToAllTabs(message);
   }
 });

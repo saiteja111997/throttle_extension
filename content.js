@@ -51,26 +51,26 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
     
      // Create the camera button (input type file)
-  const cameraButton = document.createElement("label");
-  cameraButton.htmlFor = "screenshotInput";
-  cameraButton.style.cursor = "pointer"; // Change cursor to pointer
+    const cameraButton = document.createElement("label");
+    cameraButton.htmlFor = "screenshotInput";
+    cameraButton.style.cursor = "pointer"; // Change cursor to pointer
   
 
-  iconUrl = chrome.runtime.getURL("images/camera.png");
-  cameraButton.innerHTML =  '<img src = iconUrl alt="Camera">';
-  const screenshotInput = document.createElement("input");
-  screenshotInput.type = "file";
-  screenshotInput.id = "screenshotInput";
-  screenshotInput.accept = "image/*"; // Accept image files
-  screenshotInput.style.display = "none"; // Hide the file input
-  screenshotInput.addEventListener("change", (event) => {
-    // Handle the selected file here (event.target.files[0] contains the file)
-    const selectedFile = event.target.files[0];
-    if (selectedFile) {
-      // You can do something with the selected file here
-      console.log("Selected file:", selectedFile);
-    }
-  });
+    iconUrl = chrome.runtime.getURL("images/camera.png");
+    cameraButton.innerHTML =  '<img src = iconUrl alt="Camera">';
+    const screenshotInput = document.createElement("input");
+    screenshotInput.type = "file";
+    screenshotInput.id = "screenshotInput";
+    screenshotInput.accept = "image/*"; // Accept image files
+    screenshotInput.style.display = "none"; // Hide the file input
+    screenshotInput.addEventListener("change", (event) => {
+      // Handle the selected file here (event.target.files[0] contains the file)
+      const selectedFile = event.target.files[0];
+      if (selectedFile) {
+        // You can do something with the selected file here
+        console.log("Selected file:", selectedFile);
+      }
+    });
 
   
     // Create the search button
@@ -85,20 +85,20 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     searchButton.style.boxShadow = "0px 0px 10px rgba(0, 0, 0, 0.5)";
 
     // Create the timer display
-    const timerDisplay = document.createElement("div");
-    timerDisplay.id = "timer";
-    timerDisplay.style.fontSize = "20px";
-    timerDisplay.style.textAlign = "center";
-    timerDisplay.textContent = "00:00:00";
+    // const timerDisplay = document.createElement("div");
+    // timerDisplay.id = "timer";
+    // timerDisplay.style.fontSize = "20px";
+    // timerDisplay.style.textAlign = "center";
+    // timerDisplay.textContent = "00:00:00";
   
     // Append the elements to the input container
-  inputContainer.appendChild(searchInput);
-  inputContainer.appendChild(cameraButton);
-  inputContainer.appendChild(screenshotInput);
-  inputContainer.appendChild(searchButton);
+    inputContainer.appendChild(searchInput);
+    inputContainer.appendChild(cameraButton);
+    inputContainer.appendChild(screenshotInput);
+    inputContainer.appendChild(searchButton);
 
-  // Add the timer display to the search bar
-  searchBar.appendChild(timerDisplay);
+    // Add the timer display to the search bar
+    // searchBar.appendChild(timerDisplay);
   
     // Append the container to the search bar
   searchBar.appendChild(inputContainer);
@@ -157,39 +157,63 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     // You can perform some action with the entered search text here
     // For example, send it to the background script to process
     chrome.runtime.sendMessage({ action: "performSearch", searchText });
+    // Notify the background script to update the timer state
+    console.log("Sending message to background script!!")
+    chrome.runtime.sendMessage({
+      action: "updateTimerState",
+      timerState: false,
+      seconds : 0,
+      initialState: true
+    });
     // Remove both the overlay and the search bar
     overlay.remove();
     searchBar.remove();
+  });
+}
+  
 
-    // Create the timer display and start/stop button container
+// Listen for a message from the background script for timer updates
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  // Create the timer display and start/stop button container
+
+  if (message.action === "updateTimerState") {
     const timerContainer = createTimerContainer();
     const timerDisplay = createTimerDisplay(timerContainer);
     const startStopButton = createStartStopButton(timerContainer);
-    let isTimerRunning = false;
-    let seconds = 0;
-
-    startStopButton.addEventListener("click", () => {
-      if (isTimerRunning) {
-        clearInterval(timerInterval);
-        isTimerRunning = false;
-        startStopButton.textContent = "Start"; // Change button text to "Start" when stopping
-      } else {
-        // Start the timer
-        timerInterval = setInterval(() => {
-          seconds++;
-          updateTimerDisplay(seconds, timerDisplay);
-        }, 1000);
-        isTimerRunning = true;
-        startStopButton.textContent = "Stop"; // Change button text to "Stop" when starting
-      }
+    let isTimerRunning = message.timerState;
+    let seconds = message.seconds;
+    
+    startStopButton.addEventListener("click", () => {    
+      // Notify the background script to update the timer state
+      chrome.runtime.sendMessage({
+        action: "updateTimerState",
+        timerState: isTimerRunning,
+        seconds: seconds,
+        initialState: false
+      });
+    
     });
 
+    if (isTimerRunning) {
+      clearInterval(timerInterval);
+      isTimerRunning = false;
+      startStopButton.textContent = "Start"; // Change button text to "Start" when stopping
+    } else {
+      // Start the timer
+      timerInterval = setInterval(() => {
+        seconds++;
+        updateTimerDisplay(seconds, timerDisplay);
+      }, 1000);
+      isTimerRunning = true;
+      startStopButton.textContent = "Stop"; // Change button text to "Stop" when starting
+    }
+
+    if (message.initialState === true) {
+       startStopButton.click()  
+    }
+    
     document.body.appendChild(timerContainer);
-
-    startStopButton.click();
-
-
-  });
+  }
 
   function updateTimerDisplay(seconds) {
     const hours = Math.floor(seconds / 3600);
@@ -198,7 +222,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     const formattedTime = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(remainingSeconds).padStart(2, '0')}`;
     document.getElementById('timer').textContent = formattedTime;
   }
-
+  
   function createTimerContainer() {
     const timerContainer = document.createElement("div");
     timerContainer.id = "timerContainer";
@@ -234,10 +258,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return startStopButton;
   }
 
-  
-  }
-  
-  
-  
+});
+
+
+
   
   
