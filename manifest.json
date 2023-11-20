@@ -7,8 +7,7 @@
     "permissions": [
       "activeTab",
       "scripting",
-      "tabs",
-      "*://*/"
+      "tabs"
     ],
     "web_accessible_resources": [{
       "resources": ["images/camera.png","timer.js"],

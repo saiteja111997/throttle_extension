@@ -156,7 +156,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     event.stopPropagation(); // Prevent the click event from propagating to the overlay
     // You can perform some action with the entered search text here
     // For example, send it to the background script to process
-    chrome.runtime.sendMessage({ action: "performSearch", searchText });
+    // chrome.runtime.sendMessage({ action: "performSearch", searchText });
     // Notify the background script to update the timer state
     console.log("Sending message to background script!!")
     chrome.runtime.sendMessage({
@@ -182,6 +182,13 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     const startStopButton = createStartStopButton(timerContainer);
     let isTimerRunning = message.timerState;
     let seconds = message.seconds;
+
+    console.log("Value of initialState : ", message.initialState)
+
+    if (message.initialState === true) {
+      document.body.appendChild(timerContainer);
+      startStopButton.click()  
+   } 
     
     startStopButton.addEventListener("click", () => {    
       // Notify the background script to update the timer state
@@ -207,12 +214,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       isTimerRunning = true;
       startStopButton.textContent = "Stop"; // Change button text to "Stop" when starting
     }
-
-    if (message.initialState === true) {
-       startStopButton.click()  
-    }
-    
-    document.body.appendChild(timerContainer);
   }
 
   function updateTimerDisplay(seconds) {
