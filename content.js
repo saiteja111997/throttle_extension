@@ -172,47 +172,60 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 }
   
 
+
+let timerDisplay, timerContainer, startStopButton, isTimerRunning, seconds ;
+
 // Listen for a message from the background script for timer updates
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   // Create the timer display and start/stop button container
 
   if (message.action === "updateTimerState") {
-    const timerContainer = createTimerContainer();
-    const timerDisplay = createTimerDisplay(timerContainer);
-    const startStopButton = createStartStopButton(timerContainer);
-    let isTimerRunning = message.timerState;
-    let seconds = message.seconds;
-
-    console.log("Value of initialState : ", message.initialState)
 
     if (message.initialState === true) {
-      document.body.appendChild(timerContainer);
-      startStopButton.click()  
-   } 
-    
-    startStopButton.addEventListener("click", () => {    
-      // Notify the background script to update the timer state
-      chrome.runtime.sendMessage({
-        action: "updateTimerState",
-        timerState: isTimerRunning,
-        seconds: seconds,
-        initialState: false
-      });
-    
-    });
+       timerContainer = createTimerContainer();
+       timerDisplay = createTimerDisplay(timerContainer);
+       startStopButton = createStartStopButton(timerContainer);
+       document.body.appendChild(timerContainer);
 
-    if (isTimerRunning) {
-      clearInterval(timerInterval);
-      isTimerRunning = false;
-      startStopButton.textContent = "Start"; // Change button text to "Start" when stopping
+       startStopButton.addEventListener("click", () => {    
+        console.log("Timer state in click event listener : ", isTimerRunning)
+        // Notify the background script to update the timer state
+        chrome.runtime.sendMessage({
+          action: "updateTimerState",
+          timerState: isTimerRunning,
+          seconds: seconds,
+          initialState: false
+        });
+      });
+    }
+    isTimerRunning = message.timerState;
+    seconds = message.seconds;
+
+    console.log("Value of initialState : ", message.initialState)
+    console.log("Timer state : ",isTimerRunning )
+
+    if (message.initialState === true) {
+          // Start the timer
+          timerInterval = setInterval(() => {
+            seconds++;
+            updateTimerDisplay(seconds, timerDisplay);
+          }, 1000);
+          isTimerRunning = true;
+          startStopButton.textContent = "Stop"; // Change button text to "Stop" when starting  
     } else {
-      // Start the timer
-      timerInterval = setInterval(() => {
-        seconds++;
-        updateTimerDisplay(seconds, timerDisplay);
-      }, 1000);
-      isTimerRunning = true;
-      startStopButton.textContent = "Stop"; // Change button text to "Stop" when starting
+      if (isTimerRunning) {
+        clearInterval(timerInterval);
+        isTimerRunning = false;
+        startStopButton.textContent = "Start"; // Change button text to "Start" when stopping
+      } else {
+        // Start the timer
+        timerInterval = setInterval(() => {
+          seconds++;
+          updateTimerDisplay(seconds, timerDisplay);
+        }, 1000);
+        isTimerRunning = true;
+        startStopButton.textContent = "Stop"; // Change button text to "Stop" when starting
+      }
     }
   }
 
