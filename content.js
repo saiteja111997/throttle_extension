@@ -166,7 +166,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   
 
 
-let timerDisplay, timerContainer, startStopButton, isTimerRunning, seconds, intervalID ;
+let timerDisplay, timerContainer, startStopButton, isTimerRunning, seconds, intervalID, startInterval, stopInterval ;
 
 // Listen for a message from the background script for timer updates
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
@@ -207,15 +207,26 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         window.addEventListener("mouseup", getText)
 
         if (initialTabID == message.initialTabID) {
+
           setTimeout(() => {
             console.log("clicking start")
             startStopButton.click()
-          }, 5000)
+          }, 10000)
 
           setTimeout(() => {
             console.log("clicking stop")
             startStopButton.click()
-          }, 7000)
+          },11000)
+
+          startInterval = setInterval(() => {
+            console.log("clicking start")
+            startStopButton.click()
+          }, 300000)
+
+          stopInterval = setInterval(() => {
+            console.log("clicking stop")
+            startStopButton.click()
+          }, 301000)
           }
     }
     isTimerRunning = message.timerState;
@@ -258,6 +269,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     }
 
     clearInterval(intervalID);
+    clearInterval(startInterval);
+    clearInterval(stopInterval);
     window.removeEventListener("mouseup", getText);
 
     chrome.runtime.sendMessage({
