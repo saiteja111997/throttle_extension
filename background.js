@@ -45,24 +45,48 @@ chrome.runtime.onInstalled.addListener(() => {
 
 // Listen for timer state updates from content scripts
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  if (message.action === "updateTimerState" || message.action === "removeTimer") {
-    console.log("Received a message from content script!!");
+  if (message.action === "updateTimerState") {
+    console.log("Received a updateTimerState message from content script!!");
     
     // Send the message to all tabs
     sendMessageToAllTabs(message);
+
+    
+
   } else if (message.action === "timerRemoved") {
     console.log("Timer Removed, so scraping all the content scripts")
     // Remove content scripts from all tabs
+    const contentScripts = chrome.runtime.getManifest().content_scripts;
+
     chrome.tabs.query({}, (tabs) => {
       tabs.forEach((tab) => {
-        const contentScripts = chrome.runtime.getManifest().content_scripts;
-        contentScripts.forEach((contentScript) => {
-          chrome.scripting.removeScript({
-            target: { tabId: tab.id },
-            files: contentScript.js,
+        const matchesContentScript = contentScripts.some((contentScript) =>
+          tab.url.match(contentScript.matches)
+        );
+  
+        if (matchesContentScript) {
+          contentScripts.forEach((contentScript) => {
+            chrome.scripting.executeScript({
+              target: { tabId: tab.id },
+              func: removeContentScript,
+            });
           });
-        });
+        }
       });
     });
+
+    function removeContentScript() {
+      // Function to remove content scripts in the tab
+      const scriptElements = document.querySelectorAll('script[src^="chrome-extension://"]');
+      scriptElements.forEach((scriptElement) => {
+        scriptElement.remove();
+      });
+    }
+
+  } else if (message.action === "removeTimer") {
+    console.log("Received a removeTimer message from content script!!");
+    
+    // Send the message to all tabs
+    sendMessageToAllTabs(message);
   }
 });

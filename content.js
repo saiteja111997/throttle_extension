@@ -163,7 +163,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   
 
 
-let timerDisplay, timerContainer, startStopButton, isTimerRunning, seconds, timerInterval ;
+let timerDisplay, timerContainer, startStopButton, isTimerRunning, seconds, intervalID ;
 
 // Listen for a message from the background script for timer updates
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
@@ -199,6 +199,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           });
         }); 
 
+        // Add an event listener to grab the selected text from the active tab
+
+        window.addEventListener("mouseup", getText)
     }
     isTimerRunning = message.timerState;
     seconds = message.seconds;
@@ -208,7 +211,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
     if (message.initialState === true) {
           // Start the timer
-          timerInterval = setInterval(() => {
+          intervalID = setInterval(() => {
             seconds++;
             updateTimerDisplay(seconds, timerDisplay);
           }, 1000);
@@ -216,12 +219,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           startStopButton.textContent = "Stop"; // Change button text to "Stop" when starting  
     } else {
       if (isTimerRunning) {
-        clearInterval(timerInterval);
+        clearInterval(intervalID);
         isTimerRunning = false;
         startStopButton.textContent = "Start"; // Change button text to "Start" when stopping
       } else {
         // Start the timer
-        timerInterval = setInterval(() => {
+        intervalID = setInterval(() => {
           seconds++;
           updateTimerDisplay(seconds, timerDisplay);
         }, 1000);
@@ -239,12 +242,20 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       timer.remove()
     }
 
+    clearInterval(intervalID);
+    window.removeEventListener("mouseup", getText);
+
     chrome.runtime.sendMessage({
       action: "timerRemoved",
     });
 
     // Do a http request to server to input the final time and close the session
 
+  }
+
+  function getText() {
+    let selectedText = window.getSelection().toString().trim();
+    console.log(selectedText)
   }
 
   function updateTimerDisplay(seconds) {
