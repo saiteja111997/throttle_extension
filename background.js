@@ -41,7 +41,7 @@ chrome.runtime.onInstalled.addListener(() => {
   });
 });
 
-
+var initialTabID, startClickID, stopClickID;
 
 // Listen for timer state updates from content scripts
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
@@ -51,7 +51,21 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     // Send the message to all tabs
     sendMessageToAllTabs(message);
 
-    
+    // if (message.initialState === true) {
+    //  initialTabID = message.initialTabID
+    // }
+
+    // startClickID = setInterval(() => {
+    //   chrome.tabs.sendMessage(initialTabID, {
+    //     action: "startClick",
+    //   })
+    // }, 15000);
+
+    // stopClickID = setInterval(() => {
+    //   chrome.tabs.sendMessage(initialTabID, {
+    //     action: "stopClick",
+    //   })
+    // }, 17000);    
 
   } else if (message.action === "timerRemoved") {
     console.log("Timer Removed, so scraping all the content scripts")
@@ -88,5 +102,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     
     // Send the message to all tabs
     sendMessageToAllTabs(message);
-  }
+  } 
+  // else if (message.action === "startClickExcecuted") {
+  //   console.log("Stoping the Start click interval")
+  //    clearInterval(startClickID)
+  // } else if (message.action === "stopClickExcecuted") {
+  //   console.log("Stoping the Stop click interval")
+  //   clearInterval(stopClickID)
+  // }
 });

@@ -8,7 +8,10 @@ function popup() {
         console.log("Content script loaded successfully in the active tab");
       }
       console.log("Sending the message!!")
-      chrome.tabs.sendMessage(activeTab.id, { "action": "showSearchBar" }, () => {
+      chrome.tabs.sendMessage(activeTab.id, { 
+        "action": "showSearchBar" ,
+        "initialTabID": activeTab.id
+      }, () => {
         if (chrome.runtime.lastError) {
           console.error(chrome.runtime.lastError);
         } else {

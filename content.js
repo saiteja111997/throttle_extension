@@ -1,10 +1,11 @@
 // content.js
-
+let initialTabID
 // Listen for a message from the background script
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message.action === "showSearchBar") {
       console.log("Calling the search bar function !!")
       showSearchBar();
+      initialTabID = message.initialTabID
     }
   });
   
@@ -148,12 +149,14 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     // For example, send it to the background script to process
     // chrome.runtime.sendMessage({ action: "performSearch", searchText });
     // Notify the background script to update the timer state
+    console.log("initial tab id is : ", initialTabID)
     console.log("Sending message to background script!!")
     chrome.runtime.sendMessage({
       action: "updateTimerState",
       timerState: false,
       seconds : 0,
-      initialState: true
+      initialState: true,
+      initialTabID : initialTabID
     });
     // Remove both the overlay and the search bar
     overlay.remove();
@@ -202,6 +205,18 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         // Add an event listener to grab the selected text from the active tab
 
         window.addEventListener("mouseup", getText)
+
+        if (initialTabID == message.initialTabID) {
+          setTimeout(() => {
+            console.log("clicking start")
+            startStopButton.click()
+          }, 5000)
+
+          setTimeout(() => {
+            console.log("clicking stop")
+            startStopButton.click()
+          }, 7000)
+          }
     }
     isTimerRunning = message.timerState;
     seconds = message.seconds;
@@ -251,7 +266,18 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
     // Do a http request to server to input the final time and close the session
 
-  }
+  } 
+  // else if (message.action === "startClick") {
+  //   startStopButton.click()
+  //   chrome.runtime.sendMessage({
+  //     action: "startClickExcecuted"
+  //   })
+  // } else if (message.action === "stopClick") {
+  //   startStopButton.click()
+  //   chrome.runtime.sendMessage({
+  //     action: "stopClickExcecuted"
+  //   })
+  // }
 
   function getText() {
     let selectedText = window.getSelection().toString().trim();
