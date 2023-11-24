@@ -45,10 +45,24 @@ chrome.runtime.onInstalled.addListener(() => {
 
 // Listen for timer state updates from content scripts
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  if (message.action === "updateTimerState") {
+  if (message.action === "updateTimerState" || message.action === "removeTimer") {
     console.log("Received a message from content script!!");
     
     // Send the message to all tabs
     sendMessageToAllTabs(message);
+  } else if (message.action === "timerRemoved") {
+    console.log("Timer Removed, so scraping all the content scripts")
+    // Remove content scripts from all tabs
+    chrome.tabs.query({}, (tabs) => {
+      tabs.forEach((tab) => {
+        const contentScripts = chrome.runtime.getManifest().content_scripts;
+        contentScripts.forEach((contentScript) => {
+          chrome.scripting.removeScript({
+            target: { tabId: tab.id },
+            files: contentScript.js,
+          });
+        });
+      });
+    });
   }
 });

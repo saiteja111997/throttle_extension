@@ -84,22 +84,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     searchButton.style.border = "1px solid #ccc";
     searchButton.style.boxShadow = "0px 0px 10px rgba(0, 0, 0, 0.5)";
 
-    // Create the timer display
-    // const timerDisplay = document.createElement("div");
-    // timerDisplay.id = "timer";
-    // timerDisplay.style.fontSize = "20px";
-    // timerDisplay.style.textAlign = "center";
-    // timerDisplay.textContent = "00:00:00";
-  
     // Append the elements to the input container
     inputContainer.appendChild(searchInput);
     inputContainer.appendChild(cameraButton);
     inputContainer.appendChild(screenshotInput);
     inputContainer.appendChild(searchButton);
 
-    // Add the timer display to the search bar
-    // searchBar.appendChild(timerDisplay);
-  
     // Append the container to the search bar
   searchBar.appendChild(inputContainer);
 
@@ -173,7 +163,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   
 
 
-let timerDisplay, timerContainer, startStopButton, isTimerRunning, seconds ;
+let timerDisplay, timerContainer, startStopButton, isTimerRunning, seconds, timerInterval ;
 
 // Listen for a message from the background script for timer updates
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
@@ -182,14 +172,17 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === "updateTimerState") {
 
     if (message.initialState === true) {
+       
+      var currentdate = new Date();
+       console.log("Message received at : ", currentdate.getTime())
+
        timerContainer = createTimerContainer();
        timerDisplay = createTimerDisplay(timerContainer);
        startStopButton = createStartStopButton(timerContainer);
+       const removeButton = createRemoveButton(timerContainer);
        document.body.appendChild(timerContainer);
 
        startStopButton.addEventListener("click", () => {    
-        console.log("Timer state in click event listener : ", isTimerRunning)
-        // Notify the background script to update the timer state
         chrome.runtime.sendMessage({
           action: "updateTimerState",
           timerState: isTimerRunning,
@@ -197,6 +190,15 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           initialState: false
         });
       });
+
+         // Add an event listener to remove the timer element when the button is clicked
+        removeButton.addEventListener("click", () => {
+          chrome.runtime.sendMessage({
+            action: "removeTimer",
+            seconds: seconds,
+          });
+        }); 
+
     }
     isTimerRunning = message.timerState;
     seconds = message.seconds;
@@ -227,6 +229,22 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         startStopButton.textContent = "Stop"; // Change button text to "Stop" when starting
       }
     }
+  } else if (message.action === "removeTimer") {
+    const timerContainer = document.getElementById("timerContainer");
+    if (timerContainer) {
+      timerContainer.remove();
+    }
+    const timer = document.getElementById("timer")
+    if (timer) {
+      timer.remove()
+    }
+
+    chrome.runtime.sendMessage({
+      action: "timerRemoved",
+    });
+
+    // Do a http request to server to input the final time and close the session
+
   }
 
   function updateTimerDisplay(seconds) {
@@ -234,14 +252,17 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     const minutes = Math.floor((seconds % 3600) / 60);
     const remainingSeconds = seconds % 60;
     const formattedTime = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(remainingSeconds).padStart(2, '0')}`;
-    document.getElementById('timer').textContent = formattedTime;
+    const timer = document.getElementById("timer")
+    if (timer) {
+      timer.textContent = formattedTime;
+    }
   }
   
   function createTimerContainer() {
     const timerContainer = document.createElement("div");
     timerContainer.id = "timerContainer";
     timerContainer.style.position = "fixed";
-    timerContainer.style.top = "50px"; // Adjust the top position as needed
+    timerContainer.style.top = "90px"; // Adjust the top position as needed
     timerContainer.style.right = "10px"; // Adjust the right position as needed
     timerContainer.style.backgroundColor = "rgba(0, 0, 0, 0.8)";
     timerContainer.style.borderRadius = "10px";
@@ -270,6 +291,18 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     startStopButton.style.cursor = "pointer";
     container.appendChild(startStopButton);
     return startStopButton;
+  }
+
+  function createRemoveButton(container) {
+    const removeButton = document.createElement("button");
+    removeButton.id = "removeButton";
+    removeButton.textContent = "Done";
+    removeButton.style.borderRadius = "5px";
+    removeButton.style.backgroundColor = "tomato";
+    removeButton.style.color = "white";
+    removeButton.style.cursor = "pointer";
+    container.appendChild(removeButton);
+    return removeButton;
   }
 
 });
