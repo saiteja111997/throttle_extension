@@ -69,6 +69,18 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
       }
     })
 
+  } else if (changeInfo.status === 'complete' && !sessionActive) {
+    if (tab.url.startsWith('https://google.com')) {
+      chrome.tabs.sendMessage(tabId, {
+        action: "activatePopUp"
+      }, () => {
+        if (chrome.runtime.lastError) {
+          console.error(chrome.runtime.lastError);
+        } else {
+          console.log("Message sent successfully");
+        }
+      })
+    }
   }
 });
 

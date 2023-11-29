@@ -9,6 +9,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       showSearchBar();
     }
   });
+
+  function getText() {
+    let selectedText = window.getSelection().toString().trim();
+    console.log(selectedText)
+  }
   
   function showSearchBar() {
     // Create a background overlay
@@ -238,11 +243,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
     // Do a http request to server to input the final time and close the session
   } 
-
-  function getText() {
-    let selectedText = window.getSelection().toString().trim();
-    console.log(selectedText)
-  }
 });
 
 console.log("Content script injection ended!!")
