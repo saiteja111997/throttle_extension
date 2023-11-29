@@ -1,5 +1,8 @@
 // content.js
 // Listen for a message from the background script
+
+console.log("Content script injection started!!")
+
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message.action === "showSearchBar") {
       console.log("Calling the search bar function !!")
@@ -167,6 +170,17 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   // Create the timer display and start/stop button container
   if (message.action === "updateTimerState") {
     if (message.initialState === true) {
+
+      if (document.getElementById("timer-container")) {
+        document.getElementById("timer-container").remove()
+      }
+      if (document.getElementById("start-stop-button")) {
+        document.getElementById("start-stop-button").remove()
+      }
+      if (document.getElementById("done-button")) {
+        document.getElementById("done-button").remove()
+      } 
+
       console.log("Intital timer state")
       const timerContainer = document.createElement('div');
       timerContainer.id = 'timer-container';
@@ -185,7 +199,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
       // HTML template
       timerContainer.innerHTML = `
-        <div id="elapsed-time" style="font-size: 18px; margin-bottom: 10px;">~0 mins</div>
+        <div id="elapsed-time" style="font-size: 18px; margin-bottom: 10px;">~0 mins since you started working on the error</div>
         <div style="display: flex; justify-content: space-between;">
           <button id="start-stop-button" style="padding: 8px 15px; cursor: pointer;">Stop</button>
           <button id="done-button" style="padding: 8px 15px; cursor: pointer;">Done</button>
@@ -210,7 +224,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     let elapsedTimeElement = document.getElementById("elapsed-time")
     let elapsedMinutes = message.time
     console.log("elapsed time in mins : ", elapsedMinutes)
-    elapsedTimeElement.textContent = `~${elapsedMinutes} mins`;
+    elapsedTimeElement.textContent = `~${elapsedMinutes} mins since you started working on the error`;
   } else if (message.action === "removeTimer") {
     const timerContainer = document.getElementById("timer-container");
     if (timerContainer) {
@@ -230,6 +244,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     console.log(selectedText)
   }
 });
+
+console.log("Content script injection ended!!")
 
 
 
