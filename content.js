@@ -64,22 +64,28 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   
 
     iconUrl = chrome.runtime.getURL("images/camera.png");
-    cameraButton.innerHTML =  '<img src = iconUrl alt="Camera">';
+    cameraButton.innerHTML = '<img src = iconUrl alt="Camera">';
     const screenshotInput = document.createElement("input");
     screenshotInput.type = "file";
     screenshotInput.id = "screenshotInput";
     screenshotInput.accept = "image/*"; // Accept image files
     screenshotInput.style.display = "none"; // Hide the file input
+    screenshotInput.multiple = true; // Allow multiple file selection
     screenshotInput.addEventListener("change", (event) => {
-      // Handle the selected file here (event.target.files[0] contains the file)
-      const selectedFile = event.target.files[0];
-      if (selectedFile) {
-        // You can do something with the selected file here
-        console.log("Selected file:", selectedFile);
+      // Handle the selected files here (event.target.files contains the files)
+      const selectedFiles = event.target.files;
+      if (selectedFiles.length > 0) {
+        // Ensure the number of selected files doesn't exceed 3
+        const filesToProcess = selectedFiles.length <= 3 ? selectedFiles : selectedFiles.slice(0, 3);
+
+        // Loop through the selected files and do something with each file
+        for (let i = 0; i < filesToProcess.length; i++) {
+          const file = filesToProcess[i];
+          console.log(`Selected file ${i + 1}:`, file);
+        }
       }
     });
 
-  
     // Create the search button
     const searchButton = document.createElement("button");
     searchButton.id = "searchButton";
@@ -130,24 +136,24 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     }
 
     // Send a POST request to your backend server (example.com)
-    // try {
-    //   const response = await fetch("https://example.com/your-upload-endpoint", {
-    //     method: "POST",
-    //     body: formData,
-    //   });
+    try {
+      const response = await fetch("https://jm4e775kx3.execute-api.us-east-1.amazonaws.com/prod/file_upload/upload_error", {
+        method: "POST",
+        body: formData,
+      });
 
-    //   if (response.ok) {
-    //     // Request was successful
-    //     const responseData = await response.json();
-    //     console.log("Response from server:", responseData);
-    //   } else {
-    //     // Request failed
-    //     console.error("Request failed with status:", response.status);
-    //   }
-    // } catch (error) {
-    //   // Handle any network errors
-    //   console.error("Network error:", error);
-    // }
+      if (response.ok) {
+        // Request was successful
+        const responseData = await response.json();
+        console.log("Response from server:", responseData);
+      } else {
+        // Request failed
+        console.error("Request failed with status:", response.status);
+      }
+    } catch (error) {
+      // Handle any network errors
+      console.error("Network error:", error);
+    }
 
 
     event.stopPropagation(); // Prevent the click event from propagating to the overlay
