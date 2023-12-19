@@ -10,9 +10,42 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     }
   });
 
-  function getText() {
+  let error_id = ""
+
+  async function getText() {
     let selectedText = window.getSelection().toString().trim();
     console.log(selectedText)
+
+    if (selectedText.length === 0) {
+      // Do nothing
+    } else {
+            // Create a FormData object to send the data
+        const formData = new FormData();
+
+        formData.append("text", selectedText)
+        formData.append("error_id", error_id)
+        formData.append("user_id", "1")
+
+        // Send a POST request to your backend server (example.com)
+        try {
+          const response = await fetch("https://jm4e775kx3.execute-api.us-east-1.amazonaws.com/prod/file_upload/user_action", {
+            method: "POST",
+            body: formData,
+          });
+
+          if (response.ok) {
+            // Request was successful
+            const responseData = await response.json();
+            console.log("Response from server:", responseData);
+          } else {
+            // Request failed
+            console.error("Request failed with status:", response.status);
+          }
+        } catch (error) {
+          // Handle any network errors
+          console.error("Network error:", error);
+        }
+    }
   }
   
   function showSearchBar() {
@@ -76,7 +109,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       const selectedFiles = event.target.files;
       if (selectedFiles.length > 0) {
         // Ensure the number of selected files doesn't exceed 3
-        const filesToProcess = selectedFiles.length <= 3 ? selectedFiles : selectedFiles.slice(0, 3);
+        const filesToProcess = selectedFiles.length <= 4 ? selectedFiles : selectedFiles.slice(0, 4);
 
         // Loop through the selected files and do something with each file
         for (let i = 0; i < filesToProcess.length; i++) {
@@ -125,6 +158,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
     // Append the text input value to the FormData
     formData.append("text", searchText);
+    formData.append("userId", "1")
 
     // Append the selected image files to the FormData
     const screenshotInput = document.getElementById("screenshotInput");
@@ -142,10 +176,17 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         body: formData,
       });
 
+      // const response = await fetch("http://127.0.0.1:3000/file_upload/upload_error", {
+      //   method: "POST",
+      //   body: formData,
+      // });
+
       if (response.ok) {
         // Request was successful
         const responseData = await response.json();
         console.log("Response from server:", responseData);
+        error_id = responseData["session_id"]
+        console.log("Error id is : ", error_id)
       } else {
         // Request failed
         console.error("Request failed with status:", response.status);
