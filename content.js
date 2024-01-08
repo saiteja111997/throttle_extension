@@ -83,11 +83,13 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     searchInput.style.width = "70%"; // Adjust the width as needed
     searchInput.style.border = "none"; // Remove the input border
     searchInput.style.borderRadius = "50px"; // Rounded corners
-    searchInput.style.background = "linear-gradient(to right, skyblue, white)"; // Blue-white linear gradient
-    searchInput.style.backgroundColor = "white";
-    searchInput.style.border = "1px solid #ccc";
+    searchInput.style.background = "linear-gradient(to right, #000000, #333333)"; // Shiny black linear gradient
+    searchInput.style.backgroundColor = "#333333"; // Set a base color
+    searchInput.style.border = "1px solid #000000"; // Black border
+    searchInput.style.color = "#FFFFFF"; // White text color
     searchInput.style.padding = "20px";
-    searchInput.style.boxShadow = "0px 0px 10px rgba(0, 0, 0, 0.5)";
+    searchInput.style.boxShadow = "0px 0px 10px rgba(0, 0, 0, 0.5)"; // Box shadow
+    
 
     
      // Create the camera button (input type file)
@@ -124,11 +126,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     searchButton.id = "searchButton";
     searchButton.textContent = "Go!!";
     searchButton.style.borderRadius = "50px"; // Rounded button
-    searchButton.style.backgroundColor = "skyblue"; // Button background color
-    searchButton.style.color = "Black"; // Button text color
+    searchButton.style.backgroundColor = "#333333"; // Shiny black button background color
+    searchButton.style.color = "#FFFFFF"; // White button text color
     searchButton.style.padding = "20px"; // Adjust the padding as needed
-    searchButton.style.border = "1px solid #ccc";
-    searchButton.style.boxShadow = "0px 0px 10px rgba(0, 0, 0, 0.5)";
+    searchButton.style.border = "1px solid #000000"; // Black border
+    searchButton.style.boxShadow = "0px 0px 10px rgba(0, 0, 0, 0.5)"; // Box shadow
+
 
     // Append the elements to the input container
     inputContainer.appendChild(searchInput);
@@ -241,29 +244,31 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       timerContainer.style.right = '10px';
 
       // Gradient background
-      timerContainer.style.background = 'linear-gradient(to right, #87CEEB, #ffffff)';
+      timerContainer.style.background = 'linear-gradient(to right, #1E90FF, #000000)';
       timerContainer.style.borderRadius = '10px';
-      timerContainer.style.padding = '10px';
+      timerContainer.style.padding = '15px';
       timerContainer.style.boxShadow = '0px 0px 10px rgba(0, 0, 0, 0.5)';
       timerContainer.style.cursor = 'move'; // Set cursor to move
 
       document.body.appendChild(timerContainer);
 
       // HTML template
+
+      // <button id="start-stop-button" style="padding: 8px 15px; cursor: pointer; background-color: #333333; color: #FFFFFF; border: none; border-radius: 5px; box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.3);">Stop</button>
+
       timerContainer.innerHTML = `
-        <div id="elapsed-time" style="font-size: 18px; margin-bottom: 10px;">~0 mins since you started working on the error</div>
-        <div style="display: flex; justify-content: space-between;">
-          <button id="start-stop-button" style="padding: 8px 15px; cursor: pointer;">Stop</button>
-          <button id="done-button" style="padding: 8px 15px; cursor: pointer;">Done</button>
-        </div>
+      <div id="elapsed-time" style="font-size: 18px; margin-bottom: 10px; color: #FFFFFF;">~0 mins</div>
+      <div style="display: flex; justify-content: space-between;">
+        <button id="done-button" style="padding: 8px 15px; cursor: pointer; background-color: #1E90FF; color: #FFFFFF; border: none; border-radius: 5px; box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.3);">Done</button>
+      </div>
       `;
 
-      let startStopButton = document.getElementById("start-stop-button")
-       startStopButton.addEventListener("click", () => {    
-        chrome.runtime.sendMessage({
-          action: "updateTimerState",
-        });
-      });
+      // let startStopButton = document.getElementById("start-stop-button")
+      //  startStopButton.addEventListener("click", () => {    
+      //   chrome.runtime.sendMessage({
+      //     action: "updateTimerState",
+      //   });
+      // });
         // Add an event listener to remove the timer element when the button is clicked
       let removeButton = document.getElementById("done-button")
       removeButton.addEventListener("click", () => {
@@ -276,7 +281,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     let elapsedTimeElement = document.getElementById("elapsed-time")
     let elapsedMinutes = message.time
     console.log("elapsed time in mins : ", elapsedMinutes)
-    elapsedTimeElement.textContent = `~${elapsedMinutes} mins since you started working on the error`;
+    elapsedTimeElement.textContent = `~${elapsedMinutes} mins `;
   } else if (message.action === "removeTimer") {
     const timerContainer = document.getElementById("timer-container");
     if (timerContainer) {
