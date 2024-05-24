@@ -1,5 +1,37 @@
-function popup() {
-  chrome.tabs.query({currentWindow: true, active: true}, function (tabs){
+document.addEventListener("DOMContentLoaded", function() {
+  const authButtons = document.getElementById("auth-buttons");
+  const mainButtons = document.getElementById("main-buttons");
+
+  // Function to check and update authentication state
+  function updateAuthState() {
+    if (window.chrome && chrome.storage && chrome.storage.local) {
+      chrome.storage.local.get("isAuthenticated", function(data) {
+        if (data.isAuthenticated) {
+          authButtons.style.display = "none";
+          mainButtons.style.display = "block";
+        } else {
+          authButtons.style.display = "block";
+          mainButtons.style.display = "none";
+        }
+      });
+    } else {
+      console.error("chrome.storage.local is not available.");
+      authButtons.style.display = "block";
+      mainButtons.style.display = "none";
+    }
+  }
+
+  // Initial authentication state check
+  updateAuthState();
+
+  // Event listener for login/register button
+  document.getElementById("login-button").addEventListener("click", function() {
+    chrome.tabs.create({ url: "http://127.0.0.1:3000/login" });
+  });
+
+  // Event listener for logging error and showing search bar
+  document.getElementById("buttonToShowSearchBar").addEventListener("click", function() {
+    chrome.tabs.query({ currentWindow: true, active: true }, function(tabs) {
       var activeTab = tabs[0];
 
       if (chrome.runtime.lastError) {
@@ -7,9 +39,9 @@ function popup() {
       } else {
         console.log("Content script loaded successfully in the active tab");
       }
-      console.log("Sending the message!!")
+      console.log("Sending the message!!");
       chrome.tabs.sendMessage(activeTab.id, { 
-        "action": "showSearchBar" ,
+        "action": "showSearchBar",
         "initialTabID": activeTab.id
       }, () => {
         if (chrome.runtime.lastError) {
@@ -18,11 +50,21 @@ function popup() {
           console.log("Message sent successfully");
         }
       });
-      
+    });
   });
-}
 
-document.addEventListener("DOMContentLoaded", function() {
-  document.getElementById("buttonToShowSearchBar").addEventListener("click", popup);
-}); 
+  // Event listener for going to the dashboard
+  document.getElementById("goToDashboardButton").addEventListener("click", function() {
+    chrome.tabs.create({ url: "http://localhost:3000/dashboard" });
+  });
 
+  // Event listener for logout button
+  document.getElementById("logout-button").addEventListener("click", function() {
+    // Clear token from local storage
+    localStorage.removeItem('authToken');
+    chrome.storage.local.remove('isAuthenticated', function() {
+      console.log('Token removed and user logged out.');
+      updateAuthState();
+    });
+  });
+});
