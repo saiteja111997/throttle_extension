@@ -5,10 +5,11 @@ document.addEventListener("DOMContentLoaded", function() {
   // Function to check and update authentication state
   function updateAuthState() {
     if (window.chrome && chrome.storage && chrome.storage.local) {
-      chrome.storage.local.get("isAuthenticated", function(data) {
+      chrome.storage.local.get(["isAuthenticated", "throttle_user_id"], function(data) {
         if (data.isAuthenticated) {
           authButtons.style.display = "none";
           mainButtons.style.display = "block";
+          console.log("User ID:", data.throttle_user_id); // For debugging
         } else {
           authButtons.style.display = "block";
           mainButtons.style.display = "none";
@@ -60,10 +61,10 @@ document.addEventListener("DOMContentLoaded", function() {
 
   // Event listener for logout button
   document.getElementById("logout-button").addEventListener("click", function() {
-    // Clear token from local storage
-    localStorage.removeItem('authToken');
-    chrome.storage.local.remove('isAuthenticated', function() {
-      console.log('Token removed and user logged out.');
+    // Clear user ID from local storage
+    localStorage.removeItem('throttle_user_id');
+    chrome.storage.local.remove(['isAuthenticated', 'throttle_user_id'], function() {
+      console.log('User logged out and user ID removed.');
       updateAuthState();
     });
   });
