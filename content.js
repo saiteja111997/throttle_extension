@@ -1,7 +1,26 @@
 // content.js
 // Listen for a message from the background script
 
+// let id = "";
+session_id = ""
+userId = ""
+
 console.log("Content script injection started!!");
+
+ // Function to check and update authentication state
+ function updateAuthState() {
+  if (window.chrome && chrome.storage && chrome.storage.local) {
+    chrome.storage.local.get(["isAuthenticated", "throttle_user_id"], function(data) {
+      if (data.isAuthenticated) {
+        console.log("User ID:", data.throttle_user_id); // For debugging
+
+        userId = data.throttle_user_id
+      } 
+    });
+  } else {
+    console.error("chrome.storage.local is not available.");
+  }
+}
 
 // Helper function to get XPath for an element
 function getXPath(element) {
@@ -18,11 +37,26 @@ function getXPath(element) {
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === "showSearchBar") {
     console.log("Calling the search bar function !!");
-    showSearchBar();
-  }
-});
+    // userId = message.userId
 
-let error_id = "";
+    if (message.status === "old") {
+      
+    } else {
+      showSearchBar(message.type, message.status, message.id);
+    }
+  }
+
+  //  if (message.action === "updateUserId") {
+  //   console.log("Updating user id with value : ", message.userId)
+  //   userId = message.userId
+  //  }
+
+  //  if (message.action === "updateUserIdFromBackgroundReply" && userId !== "") {
+  //   console.log("Updating user id for the new tab")
+  //   userId = message.userId
+  //  }
+
+});
 
 async function getText() {
   var selection = window.getSelection();
@@ -37,8 +71,10 @@ async function getText() {
     const formData = new FormData();
 
     formData.append("text", selectedText);
-    formData.append("error_id", error_id);
-    formData.append("user_id", "1");
+    formData.append("error_id", session_id);
+    formData.append("user_id", userId);
+
+    console.log("Printing error id : ", session_id)
 
     try {
       const response = await fetch("http://127.0.0.1:8080/file_upload/user_action", {
@@ -58,7 +94,9 @@ async function getText() {
   }
 }
 
-function showSearchBar() {
+function showSearchBar(type, status, id) {
+
+  updateAuthState();
   // Create a background overlay
   const overlay = document.createElement("div");
   overlay.style.position = "fixed";
@@ -89,7 +127,14 @@ function showSearchBar() {
   const searchInput = document.createElement("input");
   searchInput.type = "text";
   searchInput.id = "searchInput";
-  searchInput.placeholder = "Type your error !!";
+
+  // if (type == "error") { 
+  //   searchInput.placeholder = "eg; -bash: aws: command not found !!";
+  // } else if (type == "document") {
+  //   searchInput.placeholder = "eg; How we solved connection timeouts in postgres !!";
+  // }
+
+  
   searchInput.style.width = "70%"; // Adjust the width as needed
   searchInput.style.border = "none"; // Remove the input border
   searchInput.style.borderRadius = "50px"; // Rounded corners
@@ -174,12 +219,18 @@ function showSearchBar() {
   document.body.appendChild(overlay);
   document.body.appendChild(searchBar);
 
+  // Focus the search bar
+  searchBar.focus();
+
   // Add an event listener for the search button to prevent the overlay removal when the button is clicked
   searchButton.addEventListener("click", async (event) => {
+
     const searchText = searchInput.value;
+    title = searchText
     const formData = new FormData();
     formData.append("text", searchText);
-    formData.append("userId", "1");
+    formData.append("userId", userId);
+    // formData.append("type", type)
 
     const screenshotInput = document.getElementById("screenshotInput");
     if (screenshotInput.files.length > 0) {
@@ -191,8 +242,9 @@ function showSearchBar() {
 
     // Show spinner and disable the search button
     spinner.style.display = "block";
-    searchButton.disabled = true;
+    searchButton.disabled = true; 
     searchButton.style.backgroundColor = "#555555"; // Change color to indicate disabled state
+
 
     try {
       const response = await fetch("http://127.0.0.1:8080/file_upload/upload_error", {
@@ -203,13 +255,14 @@ function showSearchBar() {
       if (response.ok) {
         const responseData = await response.json();
         console.log("Response from server:", responseData);
-        error_id = responseData["session_id"];
-        console.log("Error id : ", error_id);
+        id = responseData["session_id"];
+        console.log("Error id : ", id);
 
-        // Notify the background script to update the timer state
+        // Notify the popup script 
         chrome.runtime.sendMessage({
-          action: "updateTimerState",
-          initialState: true
+          action: "sessionStarted",
+          title: searchText,
+          id: id
         });
 
         // Remove the overlay and search bar after successful response
@@ -231,6 +284,12 @@ function showSearchBar() {
   });
 }
 
+// Dynamically load FontAwesome CSS
+const link = document.createElement('link');
+link.rel = 'stylesheet';
+link.href = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css';
+document.head.appendChild(link);
+
 function makeTimerDraggable(timerContainer) {
   let isDragging = false;
   let offsetX = 0;
@@ -241,6 +300,12 @@ function makeTimerDraggable(timerContainer) {
     offsetX = e.clientX - timerContainer.getBoundingClientRect().left;
     offsetY = e.clientY - timerContainer.getBoundingClientRect().top;
     timerContainer.style.cursor = 'grabbing'; // Change cursor to grabbing
+
+    // Remove bottom property and set top property to prevent expansion issue
+    timerContainer.style.bottom = 'unset';
+    timerContainer.style.right = 'unset';
+    timerContainer.style.top = `${e.clientY - offsetY}px`;
+    timerContainer.style.left = `${e.clientX - offsetX}px`;
   });
 
   document.addEventListener('mousemove', (e) => {
@@ -260,81 +325,99 @@ let timerDisplay, timerContainer, startStopButton, isTimerRunning, seconds;
 
 // Listen for a message from the background script for timer updates
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  // Create the timer display and start/stop button container
-  if (message.action === "updateTimerState") {
-    if (message.initialState === true) {
-
-      if (document.getElementById("timer-container")) {
-        document.getElementById("timer-container").remove();
-      }
-      if (document.getElementById("start-stop-button")) {
-        document.getElementById("start-stop-button").remove();
-      }
-      if (document.getElementById("done-button")) {
-        document.getElementById("done-button").remove();
-      }
-
-      console.log("Intital timer state");
-      const timerContainer = document.createElement('div');
-      timerContainer.id = 'timer-container';
-      timerContainer.style.position = 'fixed';
-      timerContainer.style.top = '400px';
-      timerContainer.style.right = '10px';
-      timerContainer.style.width = '200px'; // Fixed width
-      timerContainer.style.height = 'auto'; // Auto height
-
-      // Gradient background
-      timerContainer.style.background = 'linear-gradient(to right, #1E90FF, #000000)';
-      timerContainer.style.borderRadius = '10px';
-      timerContainer.style.padding = '15px';
-      timerContainer.style.boxShadow = '0px 0px 10px rgba(0, 0, 0, 0.5)';
-      timerContainer.style.cursor = 'grab'; // Set cursor to grab for draggable
-
-      document.body.appendChild(timerContainer);
-
-      // Make the timer draggable
-      makeTimerDraggable(timerContainer);
-
-      // HTML template
-
-      timerContainer.innerHTML = `
-      <div id="elapsed-time" style="font-size: 18px; margin-bottom: 10px; color: #FFFFFF;">~0 mins</div>
-      <div style="display: flex; justify-content: space-between;">
-        <button id="done-button" style="padding: 8px 15px; cursor: pointer; background-color: #1E90FF; color: #FFFFFF; border: none; border-radius: 5px; box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.3);">Done</button>
-      </div>
-      `;
-
-      let removeButton = document.getElementById("done-button");
-      removeButton.addEventListener("click", () => {
-        // Open localhost:3000/ with error_id as query parameter
-        console.log("Printing the error id before opening the browser tab, errorID : ", error_id);
-        const url = `http://localhost:3000/preDocEdit/?error_id=${error_id}`;
-        window.open(url, '_blank');
-
-        // Send message to background script if needed
-        chrome.runtime.sendMessage({
-          action: "removeTimer",
-        });
-      });
-
-      window.addEventListener("mouseup", getText);
+  if (message.action === "updateState") {
+    if (document.getElementById("timer-container")) {
+      document.getElementById("timer-container").remove();
     }
-    let elapsedTimeElement = document.getElementById("elapsed-time");
-    let elapsedMinutes = message.time;
-    console.log("elapsed time in mins : ", elapsedMinutes);
-    elapsedTimeElement.textContent = `~${elapsedMinutes} mins `;
+
+    updateAuthState()
+
+    session_id = message.id
+
+    console.log("Update state called!!");
+    const timerContainer = document.createElement('div');
+    timerContainer.id = 'timer-container';
+    timerContainer.style.position = 'fixed';
+    timerContainer.style.bottom = '20px'; // Adjusted position to the bottom
+    timerContainer.style.right = '20px'; // Adjusted position to the right
+    timerContainer.style.width = '250px'; // Adjusted width
+    timerContainer.style.height = 'auto'; // Auto height
+
+    // Gradient background
+    timerContainer.style.background = 'linear-gradient(45deg, #333333, #000000)';
+    timerContainer.style.borderRadius = '10px';
+    timerContainer.style.padding = '15px';
+    timerContainer.style.boxShadow = '0px 0px 10px rgba(0, 0, 0, 0.5)';
+    timerContainer.style.cursor = 'grab'; // Set cursor to grab for draggable
+
+    document.body.appendChild(timerContainer);
+
+    // Make the timer draggable
+    makeTimerDraggable(timerContainer);
+
+    // HTML template
+    timerContainer.innerHTML = `
+      <div style="padding: 10px; background: linear-gradient(45deg, #333333, #000000); border-radius: 10px; box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.5);">
+        <div style="display: flex; align-items: center; overflow: hidden; white-space: nowrap;">
+          <div style="flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-right: 10px;">
+            <marquee behavior="scroll" direction="left" scrollamount="3" style="color: #FFFFFF;">
+              ${message.title}
+            </marquee>
+          </div>
+          <div style="display: flex; gap: 10px;">
+            <i id="cancel-icon" class="fas fa-times" style="cursor: pointer; color: red;" title="Cancel journey"></i>
+            <i id="tick-icon" class="fas fa-check" style="cursor: pointer; color: green;" title="End journey"></i>
+            <i id="pause-icon" class="fas fa-pause" style="cursor: pointer; color: yellow;" title="Pause journey"></i>
+          </div>
+        </div>
+      </div>
+    `;
+
+    document.getElementById("cancel-icon").addEventListener("click", () => {
+      // Handle cancel action
+      timerContainer.remove();
+      chrome.runtime.sendMessage({
+        action: "removeTimer",
+      });
+    });
+
+    document.getElementById("tick-icon").addEventListener("click", () => {
+      // Handle tick action (e.g., mark as done and open new page)
+      console.log("Printing the error id before opening the browser tab, errorID : ", message.id);
+      const url = `http://localhost:3000/preDocEdit/?error_id=${message.id}`;
+      window.open(url, '_blank');
+      timerContainer.remove();
+      chrome.runtime.sendMessage({
+        action: "removeTimer",
+      });
+    });
+
+    document.getElementById("pause-icon").addEventListener("click", () => {
+      // Handle pause action (e.g., toggle pause/resume)
+      console.log("Pause action clicked");
+      // Implement pause/resume functionality as needed
+      chrome.runtime.sendMessage({
+        action: "pauseTimer",
+      });
+    });
+
+    window.addEventListener("mouseup", getText);
   } else if (message.action === "removeTimer") {
     const timerContainer = document.getElementById("timer-container");
     if (timerContainer) {
       timerContainer.remove();
     }
+
     window.removeEventListener("mouseup", getText);
 
     chrome.runtime.sendMessage({
-      action: "timerRemoved",
+      action: "done",
     });
-
-    // Do a http request to server to input the final time and close the session
+  } else if (message.action === "pauseTimer") {
+    // Handle pause action
+    console.log("Timer paused");
+    // Pause logic here, for example:
+    // clearInterval(timerInterval);
   }
 });
 

@@ -10,11 +10,11 @@ body {
 }
 
 .popup-container {
-  background-color: #111;
+  background-color: #1a1a1a;
   border: 1px solid #444;
-  border-radius: 10px;
+  border-radius: 15px;
   box-shadow: 0 0 20px rgba(0, 0, 0, 0.4);
-  max-width: 300px;
+  width: 350px;
   padding: 20px;
   text-align: center;
   color: #eee;
@@ -23,14 +23,54 @@ body {
 .header {
   background: linear-gradient(45deg, #000, #333);
   color: #fff;
-  padding: 15px;
-  border-radius: 10px 10px 0 0;
-  font-size: 1.2em;
+  padding: 20px;
+  border-radius: 15px 15px 0 0;
+  font-size: 1.5em;
 }
 
 .header h1 {
   margin: 0;
-  font-size: 1.5em;
+}
+
+.current-error-title-block {
+  background-color: #333;
+  border-radius: 10px;
+  padding: 10px;
+  margin: 20px 0;
+  text-align: left;
+}
+
+.current-error-title-block .error-title {
+  color: #fff;
+  font-size: 1.1em;
+  margin-bottom: 10px;
+}
+
+.current-error-title-block .done-button {
+  background: linear-gradient(45deg, #F0741B, #D9630F);
+  color: #fff;
+  border: none;
+  padding: 5px 10px;
+  cursor: pointer;
+  border-radius: 5px;
+  font-size: 0.9em;
+  transition: background 0.3s ease, transform 0.3s ease;
+}
+
+.current-error-title-block .done-button:hover {
+  background: linear-gradient(45deg, #D9630F, #F0741B);
+  transform: scale(1.05);
+}
+
+.button-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin: 20px 0;
+}
+
+.button-container {
+  margin-top: 20px;
 }
 
 button {
@@ -38,18 +78,45 @@ button {
   color: #fff;
   border: none;
   padding: 12px 25px;
-  margin-top: 15px;
   cursor: pointer;
-  border-radius: 5px;
+  border-radius: 10px;
   font-size: 1em;
-  transition: background 0.3s ease;
+  transition: background 0.3s ease, transform 0.3s ease;
+  margin-bottom: 10px;
+  width: 100%;
 }
 
 button:hover {
   background: linear-gradient(45deg, #D9630F, #F0741B);
+  transform: scale(1.05);
 }
 
-#goToDashboardButton {
-  margin-top: 20px;
+#error-titles {
+  margin-top: 30px;
 }
 
+#error-titles h3 {
+  color: #eee;
+  margin-bottom: 10px;
+}
+
+#errorList {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+}
+
+#errorList li {
+  background-color: #333;
+  color: white;
+  padding: 15px;
+  margin: 10px 0;
+  border-radius: 10px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  transition: background-color 0.3s ease, transform 0.3s ease;
+}
+
+#errorList li:hover {
+  background-color: #444;
+  transform: scale(1.02);
+}

@@ -12,14 +12,19 @@
       <h1>throttle.ai</h1>
     </div>
     
-    <div id="auth-buttons">
-      <button id="login-button">Login/Register</button>
+    <div id="main-buttons" class="button-grid">
+      <button id="logError" class="button">Log error</button>
+      <button id="goToDashboardButton" class="button">My dashboard</button>
+      <button id="logout-button" class="button">Logout</button>
     </div>
-    
-    <div id="main-buttons" style="display: none;">
-      <button id="buttonToShowSearchBar">Log error</button>
-      <button id="goToDashboardButton">My dashboard</button>
-      <button id="logout-button">Logout</button>
+
+    <div id="full-width-button" class="button-container">
+      <button id="createDocumentButton">Create a Document</button>
+    </div>
+
+    <div id="error-titles">
+      <!-- <h3>Latest Error Titles:</h3> -->
+      <ul id="errorList"></ul>
     </div>
   </div>
   <script src="popup.js"></script>
