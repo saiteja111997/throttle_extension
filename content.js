@@ -40,7 +40,15 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     // userId = message.userId
 
     if (message.status === "old") {
-      
+      console.log("Received message, will do something!!")
+
+      // Notify the popup script 
+      chrome.runtime.sendMessage({
+        action: "sessionStarted",
+        title: message.title,
+        id: message.id,
+      });
+
     } else {
       showSearchBar(message.type, message.status, message.id);
     }
@@ -63,7 +71,7 @@ async function getText() {
   let selectedText = selection.toString().trim();
   console.log(selectedText);
 
-  if (selectedText.length === 0) {
+  if (selectedText.length === 0 || selectedText.length > 2000) {
     // Do nothing
   } else {
     var currentURL = window.location.href;
@@ -329,6 +337,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (document.getElementById("timer-container")) {
       document.getElementById("timer-container").remove();
     }
+
+    // window.close();
 
     updateAuthState()
 

@@ -87,16 +87,79 @@ button:hover {
 }
 
 #errorList li {
-  background-color: #333;
+  background: linear-gradient(145deg, #0c0c0c, #333);
   color: white;
   padding: 15px;
   margin: 10px 0;
   border-radius: 10px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
   transition: background-color 0.3s ease, transform 0.3s ease;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+#errorList li::after {
+  content: "Resume journey";
+  color: white;
+  background-color: rgba(0, 0, 0, 0.7);
+  padding: 5px 10px;
+  border-radius: 5px;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+#errorList li:hover::after {
+  opacity: 1;
 }
 
 #errorList li:hover {
   background-color: #444;
   transform: scale(1.02);
+}
+
+
+.marquee {
+  overflow: hidden;
+  position: relative;
+  width: 250px; /* Adjust as needed */
+}
+
+.marquee-content {
+  display: inline-block;
+  white-space: nowrap;
+  animation: marquee 10s linear infinite;
+}
+
+@keyframes marquee {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(-100%);
+  }
+}
+
+.incomplete-button {
+  background: linear-gradient(45deg, #FF0000, #8B0000);
+  border: none;
+  padding: 10px;
+  cursor: pointer;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  margin-left: 10px;
+  transition: background-color 0.3s ease, transform 0.3s ease;
+}
+
+.incomplete-button:hover {
+  background: linear-gradient(45deg, #8B0000, #FF0000);
+  transform: scale(1.05);
 }

@@ -3,7 +3,7 @@ document.addEventListener("DOMContentLoaded", function() {
   const mainButtons = document.getElementById("main-buttons");
   const fullWidthButton = document.getElementById("full-width-button");
 
-  let userId = ""
+  let userId = "";
 
   // Function to check and update authentication state
   function updateAuthState() {
@@ -15,7 +15,7 @@ document.addEventListener("DOMContentLoaded", function() {
           fullWidthButton.style.display = "block";
           console.log("User ID:", data.throttle_user_id); // For debugging
 
-          userId = data.throttle_user_id
+          userId = data.throttle_user_id;
 
           fetchErrorTitles(); // Fetch error titles when authenticated
         } else {
@@ -34,54 +34,49 @@ document.addEventListener("DOMContentLoaded", function() {
 
   // Function to fetch error titles from backend API
   function fetchErrorTitles() {
-    // For now, using dummy titles
-    const dummyTitles = [
-      { title: "Error 1", status: "incomplete" },
-      { title: "Error 2", status: "incomplete" },
-      { title: "Error 3", status: "incomplete" }
-    ];
-    const errorList = document.getElementById("errorList");
-    errorList.innerHTML = "";
-    dummyTitles.forEach(error => {
-      const li = document.createElement("li");
-      li.textContent = `${error.title} - ${error.status}`;
-      errorList.appendChild(li);
-    });
-
-    // Uncomment the following lines to make a real API call
-    /*
-    fetch('YOUR_BACKEND_API_ENDPOINT')
+    fetch('http://127.0.0.1:8080/file_upload/get_latest_unsolved')
       .then(response => response.json())
       .then(data => {
         const errorList = document.getElementById("errorList");
         errorList.innerHTML = "";
-        data.forEach(error => {
+        data.result.forEach(error => {
           const li = document.createElement("li");
-          li.textContent = `${error.title} - ${error.status}`;
+          li.classList.add("error-tile");
+          li.dataset.errorId = error.id;
+          li.innerHTML = `
+            <div class="marquee">
+              <div class="marquee-content">${error.title}</div>
+            </div>
+            <button class="incomplete-button"></button>`;
+          li.addEventListener("click", function() {
+            sendMessageToContentScript(error.id, error.title);
+          });
           errorList.appendChild(li);
         });
       })
       .catch(error => console.error('Error fetching error titles:', error));
-    */
   }
 
-  // Function to append current error title block
-  // function appendCurrentErrorTitle(title) {
-  //   console.log(title)
-  //   const header = document.querySelector('.header');
-  //   const errorTitleBlock = document.createElement('div');
-  //   errorTitleBlock.classList.add('current-error-title-block');
-  //   errorTitleBlock.innerHTML = `
-  //     <div class="error-title">${title}</div>
-  //     <button class="done-button">Done</button>
-  //   `;
-  //   header.insertAdjacentElement('afterend', errorTitleBlock);
-
-  //   // Add event listener to the Done button
-  //   errorTitleBlock.querySelector('.done-button').addEventListener('click', () => {
-  //     errorTitleBlock.remove();
-  //   });
-  // }
+  // Function to send message to content script
+  function sendMessageToContentScript(errorId, title) {
+    chrome.tabs.query({ currentWindow: true, active: true }, function(tabs) {
+      var activeTab = tabs[0];
+      chrome.tabs.sendMessage(activeTab.id, { 
+        "action": "showSearchBar",
+        "type": "error",
+        "title": title,
+        "id": errorId,
+        "status": "old"
+      }, function(response) {
+        if (chrome.runtime.lastError) {
+          console.error(chrome.runtime.lastError);
+        } else {
+          console.log("Message sent successfully with ID: " + errorId);
+        }
+      });
+      window.close();
+    });
+  }
 
   // Initial authentication state check
   updateAuthState();
@@ -93,21 +88,8 @@ document.addEventListener("DOMContentLoaded", function() {
 
   // Event listener for logging error and showing search bar
   document.getElementById("logError").addEventListener("click", function() {
- 
     updateAuthState();
-
     console.log("Printing the user id after the click : ", userId)
-    
-    // chrome.runtime.sendMessage({ 
-    //   "action": "updateUserId",
-    //   "userId": userId,
-    // }, () => {
-    //   if (chrome.runtime.lastError) {
-    //     console.error(chrome.runtime.lastError);
-    //   } else {
-    //     console.log("Message sent successfully");
-    //   }
-    // });
 
     chrome.tabs.query({ currentWindow: true, active: true }, function(tabs) {
       var activeTab = tabs[0];
@@ -123,13 +105,14 @@ document.addEventListener("DOMContentLoaded", function() {
         "type": "error",
         "id": "",
         "status": "new"
-      }, () => {
+      }, function(response) {
         if (chrome.runtime.lastError) {
           console.error(chrome.runtime.lastError);
         } else {
           console.log("Message sent successfully");
         }
       });
+      window.close();
     });
   });
 
@@ -146,24 +129,13 @@ document.addEventListener("DOMContentLoaded", function() {
       console.log('User logged out and user ID removed.');
       updateAuthState();
     });
+    window.close();
   });
 
   // Event listener for create document button
   document.getElementById("createDocumentButton").addEventListener("click", function() {
-
     updateAuthState();
     console.log("Printing the user id after the click : ", userId)
-
-    // chrome.runtime.sendMessage({ 
-    //   "action": "updateUserId",
-    //   "userId": userId,
-    // }, () => {
-    //   if (chrome.runtime.lastError) {
-    //     console.error(chrome.runtime.lastError);
-    //   } else {
-    //     console.log("Message sent successfully");
-    //   }
-    // });
 
     chrome.tabs.query({ currentWindow: true, active: true }, function(tabs) {
       var activeTab = tabs[0];
@@ -179,21 +151,14 @@ document.addEventListener("DOMContentLoaded", function() {
         "type": "document",
         "id": "",
         "status": "new"
-      }, () => {
+      }, function(response) {
         if (chrome.runtime.lastError) {
           console.error(chrome.runtime.lastError);
         } else {
           console.log("Message sent successfully");
         }
       });
+      window.close();
     });
   });
-
-  // Listen for messages from the content script
-  // chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
-  //   if (request.action === "sessionStarted" && request.title) {
-  //     console.log("Message received by popup.js")
-  //     appendCurrentErrorTitle(request.title);
-  //   }
-  // });
 });
