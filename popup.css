@@ -32,36 +32,6 @@ body {
   margin: 0;
 }
 
-.current-error-title-block {
-  background-color: #333;
-  border-radius: 10px;
-  padding: 10px;
-  margin: 20px 0;
-  text-align: left;
-}
-
-.current-error-title-block .error-title {
-  color: #fff;
-  font-size: 1.1em;
-  margin-bottom: 10px;
-}
-
-.current-error-title-block .done-button {
-  background: linear-gradient(45deg, #F0741B, #D9630F);
-  color: #fff;
-  border: none;
-  padding: 5px 10px;
-  cursor: pointer;
-  border-radius: 5px;
-  font-size: 0.9em;
-  transition: background 0.3s ease, transform 0.3s ease;
-}
-
-.current-error-title-block .done-button:hover {
-  background: linear-gradient(45deg, #D9630F, #F0741B);
-  transform: scale(1.05);
-}
-
 .button-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -69,7 +39,14 @@ body {
   margin: 20px 0;
 }
 
+.button-grid .button {
+  width: 100%;
+  padding: 15px;
+  font-size: 1.1em;
+}
+
 .button-container {
+  width: 100%;
   margin-top: 20px;
 }
 
@@ -77,18 +54,21 @@ button {
   background: linear-gradient(45deg, #F0741B, #D9630F);
   color: #fff;
   border: none;
-  padding: 12px 25px;
   cursor: pointer;
   border-radius: 10px;
-  font-size: 1em;
+  font-size: 1.1em;
   transition: background 0.3s ease, transform 0.3s ease;
-  margin-bottom: 10px;
   width: 100%;
+  padding: 15px;
 }
 
 button:hover {
   background: linear-gradient(45deg, #D9630F, #F0741B);
   transform: scale(1.05);
+}
+
+#full-width-button button {
+  width: 100%;
 }
 
 #error-titles {

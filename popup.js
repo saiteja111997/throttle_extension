@@ -1,6 +1,7 @@
 document.addEventListener("DOMContentLoaded", function() {
   const authButtons = document.getElementById("auth-buttons");
   const mainButtons = document.getElementById("main-buttons");
+  const fullWidthButton = document.getElementById("full-width-button");
 
   let userId = ""
 
@@ -10,7 +11,8 @@ document.addEventListener("DOMContentLoaded", function() {
       chrome.storage.local.get(["isAuthenticated", "throttle_user_id"], function(data) {
         if (data.isAuthenticated) {
           authButtons.style.display = "none";
-          mainButtons.style.display = "block";
+          mainButtons.style.display = "grid";
+          fullWidthButton.style.display = "block";
           console.log("User ID:", data.throttle_user_id); // For debugging
 
           userId = data.throttle_user_id
@@ -19,12 +21,14 @@ document.addEventListener("DOMContentLoaded", function() {
         } else {
           authButtons.style.display = "block";
           mainButtons.style.display = "none";
+          fullWidthButton.style.display = "none";
         }
       });
     } else {
       console.error("chrome.storage.local is not available.");
       authButtons.style.display = "block";
       mainButtons.style.display = "none";
+      fullWidthButton.style.display = "none";
     }
   }
 
