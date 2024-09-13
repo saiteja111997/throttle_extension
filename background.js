@@ -34,6 +34,16 @@ chrome.runtime.onMessageExternal.addListener((message, sender, sendResponse) => 
   }
 });
 
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message.action === "openNewTab") {
+      const searchUrl = `https://www.google.com/search?q=${encodeURIComponent(message.searchQuery)}`;
+      chrome.tabs.create({ url: searchUrl }, (tab) => {
+          console.log("New tab opened with search URL:", searchUrl);
+      });
+  }
+});
+
+
 
 
 

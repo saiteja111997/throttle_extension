@@ -232,64 +232,75 @@ function showSearchBar(type, status, id) {
 
   // Add an event listener for the search button to prevent the overlay removal when the button is clicked
   searchButton.addEventListener("click", async (event) => {
+    const searchText = searchInput.value.trim(); // Ensure text is trimmed
+    if (searchText.length === 0) {
+        alert("Please enter a valid search query.");
+        return;
+    }
 
-    const searchText = searchInput.value;
-    title = searchText
     const formData = new FormData();
     formData.append("text", searchText);
     formData.append("userId", userId);
-    // formData.append("type", type)
 
     const screenshotInput = document.getElementById("screenshotInput");
     if (screenshotInput.files.length > 0) {
-      for (let i = 0; i < screenshotInput.files.length; i++) {
-        const file = screenshotInput.files[i];
-        formData.append("images", file);
-      }
+        for (let i = 0; i < screenshotInput.files.length; i++) {
+            const file = screenshotInput.files[i];
+            formData.append("images", file);
+        }
     }
 
     // Show spinner and disable the search button
     spinner.style.display = "block";
-    searchButton.disabled = true; 
+    searchButton.disabled = true;
     searchButton.style.backgroundColor = "#555555"; // Change color to indicate disabled state
 
-
     try {
-      const response = await fetch("http://127.0.0.1:8080/file_upload/upload_error", {
-        method: "POST",
-        body: formData,
-      });
-
-      if (response.ok) {
-        const responseData = await response.json();
-        console.log("Response from server:", responseData);
-        id = responseData["session_id"];
-        console.log("Error id : ", id);
-
-        // Notify the popup script 
-        chrome.runtime.sendMessage({
-          action: "sessionStarted",
-          title: searchText,
-          id: id
+        const response = await fetch("http://127.0.0.1:8080/file_upload/upload_error", {
+            method: "POST",
+            body: formData,
         });
 
-        // Remove the overlay and search bar after successful response
+        if (response.ok) {
+            const responseData = await response.json();
+            console.log("Response from server:", responseData);
+            id = responseData["session_id"];
+            console.log("Error id : ", id);
+
+            // Notify the popup script 
+            chrome.runtime.sendMessage({
+                action: "sessionStarted",
+                title: searchText,
+                id: id
+            });
+
+            // Remove the overlay and search bar after successful response
+            overlay.remove();
+            searchBar.remove();
+
+            // Send a message to the background script to open a new tab
+            chrome.runtime.sendMessage({
+                action: "openNewTab",
+                searchQuery: searchText
+            });
+        } else {
+            console.error("Request failed with status:", response.status);
+        }
+    } catch (error) {
+        console.error("Network error:", error);
+    } finally {
+        // Hide spinner and re-enable the search button
+        spinner.style.display = "none";
+        searchButton.disabled = false;
+        searchButton.style.backgroundColor = "#333333"; // Restore original color
+
+        // Ensure the overlay and search bar are removed even if there's an error
         overlay.remove();
         searchBar.remove();
-      } else {
-        console.error("Request failed with status:", response.status);
-      }
-    } catch (error) {
-      console.error("Network error:", error);
-    } finally {
-      // Hide spinner and re-enable the search button
-      spinner.style.display = "none";
-      searchButton.disabled = false;
-      searchButton.style.backgroundColor = "#333333"; // Restore original color
     }
 
     event.stopPropagation(); // Prevent the click event from propagating to the overlay
-  });
+});
 }
 
 // Dynamically load FontAwesome CSS
