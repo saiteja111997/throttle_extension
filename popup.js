@@ -4,49 +4,181 @@ document.addEventListener("DOMContentLoaded", function() {
   const fullWidthButton = document.getElementById("full-width-button");
   const searchInput = document.getElementById("searchInput");
   const searchButton = document.getElementById("searchButton");
-  const screenshotInput = document.getElementById("imageInput");
+  const imageInput = document.getElementById("imageInput");
+  const imagePreview = document.getElementById("imagePreview");
+  let selectedFiles = [];
+  let throttleUserId = "";
 
-  let userId = "";
+  // Function to get throttle_user_id from chrome.storage.local
+  function getThrottleUserId() {
+    return new Promise((resolve, reject) => {
+      if (window.chrome && chrome.storage && chrome.storage.local) {
+        chrome.storage.local.get(["isAuthenticated", "throttle_user_id"], function(data) {
+          if (data.isAuthenticated) {
+            console.log("Authenticated");
+            console.log("User ID:", data.throttle_user_id); // For debugging
+            resolve(data.throttle_user_id);  // Resolve with the throttle_user_id
+          } else {
+            console.error("User is not authenticated.");
+            reject("User is not authenticated");
+          }
+        });
+      } else {
+        console.error("chrome.storage.local is not available.");
+        reject("chrome.storage.local is not available");
+      }
+    });
+  }
+
 
   // Enable Go button when the user types in the search input
   if (searchInput && searchButton) {
     searchInput.addEventListener("input", validateInput);
 
-    searchButton.addEventListener("click", function () {
+    searchButton.addEventListener("click", async function () {
       if (!searchButton.disabled) {
         const errorTitle = searchInput.value.trim();
-
-        console.log("screenshotInput element:", screenshotInput);
-        if (!screenshotInput) {
-        console.error("screenshotInput is not found. Check if the element exists in the DOM.");
-        return; // Exit the function to prevent further errors
+  
+        // Ensure image input exists
+        if (!imageInput) {
+          console.error("imageInput is not found. Check if the element exists in the DOM.");
+          return;
         }
-
-
-        const files = screenshotInput.files;
-    
-        // Create an object with the error title and selected files
-        const dataToSend = {
-          text: errorTitle,
-          files: files.length > 0 ? Array.from(files) : null
-        };
-
-        // Send a message to the background script to reload the current tab with the search query
-        chrome.runtime.sendMessage({
-          action: "reloadTab",
-          searchQuery: errorTitle,
-          data: dataToSend
-        });
-
-        // Send a message to content.js to handle the API request
-        // chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-        //   chrome.tabs.sendMessage(tabs[0].id, {
-        //     action: "startSession",
-        //     data: dataToSend
-        //   });
-        // });
+  
+        // Get selected files and form data
+        const selectedFiles = imageInput.files;
+        if (selectedFiles.length === 0) {
+          console.error("No files selected.");
+        }
+  
+        // Get throttle_user_id from localStorage (or using chrome.storage.local)
+        const throttleUserId = await getThrottleUserId(); // Assuming this function is already defined
+        if (!throttleUserId) {
+          console.error("No throttle_user_id found.");
+          return;
+        }
+  
+        // Prepare the form data
+        const formData = new FormData();
+        formData.append("text", errorTitle); // Add the text input
+        formData.append("userId", throttleUserId); // Add throttle_user_id
+        for (let i = 0; i < selectedFiles.length; i++) {
+          formData.append("images", selectedFiles[i]); // Add the selected images
+        }
+  
+        // Blur the entire popup and show the spinner
+        const popupContent = document.body;  // Assuming you want to blur the entire popup content
+        popupContent.classList.add("blurred");
+  
+        // Create a spinner overlay element and show it
+        const spinnerOverlay = document.createElement("div");
+        spinnerOverlay.classList.add("spinner-overlay");
+  
+        // Create spinner
+        const spinner = document.createElement("div");
+        spinner.classList.add("spinner");
+  
+        // Add the spinner text
+        const spinnerText = document.createElement("div");
+        spinnerText.classList.add("spinner-text");
+        spinnerText.textContent = "Uploading data to the server, please wait!!";
+  
+        // Append spinner and text to spinnerOverlay
+        spinnerOverlay.appendChild(spinner);
+        spinnerOverlay.appendChild(spinnerText);
+  
+        // Append spinnerOverlay to the body so it's outside of the blurred area
+        document.body.appendChild(spinnerOverlay);
+  
+        try {
+          // Make the asynchronous POST request to upload images, text, and throttle_user_id
+          const response = await fetch("http://127.0.0.1:8080/file_upload/upload_error", {
+            method: "POST",
+            body: formData,
+          });
+  
+          if (response.ok) {
+            const responseData = await response.json();
+            console.log("Response from server:", responseData);
+  
+            // Send a message to the background script without including data
+            chrome.runtime.sendMessage({
+              action: "reloadTab",
+              searchQuery: errorTitle,
+            });
+  
+          } else {
+            console.error("Server responded with an error:", response.statusText);
+          }
+        } catch (error) {
+          console.error("Request failed:", error);
+        } finally {
+          // Remove the spinner and unblur the popup after the API call completes
+          popupContent.classList.remove("blurred");
+          if (spinnerOverlay) {
+            spinnerOverlay.remove();
+          }
+        }
       }
     });
+
+    // Handle image input changes for preview
+    imageInput.addEventListener("change", function () {
+      if (imageInput.files.length > 0) {
+        const files = Array.from(imageInput.files);
+        console.log("Files found > 1")
+
+        // Make sure the total selected files don't exceed 4
+        if (selectedFiles.length + files.length > 4) {
+          alert("You can only upload a maximum of 4 images.");
+          return;
+        }
+
+        // Add the selected files to the `selectedFiles` array
+        selectedFiles = selectedFiles.concat(files);
+
+        // Update the image previews
+        updateImagePreviews();
+      }
+    });
+  }
+
+  // Function to update the image previews
+  function updateImagePreviews() {
+    imagePreview.innerHTML = ""; // Clear previous previews
+
+    selectedFiles.forEach((file, index) => {
+      const reader = new FileReader();
+
+      reader.onload = function (e) {
+        const imgWrapper = document.createElement("div");
+        imgWrapper.classList.add("preview-wrapper");
+
+        const imgElement = document.createElement("img");
+        imgElement.src = e.target.result;
+        imgElement.alt = file.name;
+        imgElement.classList.add("preview-image");
+
+        const removeBtn = document.createElement("button");
+        removeBtn.classList.add("remove-image");
+        removeBtn.innerHTML = "&times;";
+        removeBtn.addEventListener("click", function () {
+          removeImage(index); // Remove the image when the cross button is clicked
+        });
+
+        imgWrapper.appendChild(imgElement);
+        imgWrapper.appendChild(removeBtn);
+        imagePreview.appendChild(imgWrapper);
+      };
+
+      reader.readAsDataURL(file);
+    });
+  }
+
+  // Function to remove an image from the preview and from the `selectedFiles` array
+  function removeImage(index) {
+    selectedFiles.splice(index, 1); // Remove the selected file
+    updateImagePreviews(); // Update the previews after removal
   }
 
   // Function to enable/disable the Go button based on input
@@ -62,7 +194,7 @@ document.addEventListener("DOMContentLoaded", function() {
       searchButton.classList.remove('active'); // Reset button to default
       searchButton.style.backgroundColor = '#555555'; // Set to grey
     }
-  } 
+  }
 
   // Function to check and update authentication state
   function updateAuthState() {

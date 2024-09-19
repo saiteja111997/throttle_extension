@@ -7,19 +7,40 @@ userId = ""
 
 console.log("Content script injection started!!");
 
- // Function to check and update authentication state
- function updateAuthState() {
-  if (window.chrome && chrome.storage && chrome.storage.local) {
-    chrome.storage.local.get(["isAuthenticated", "throttle_user_id"], function(data) {
-      if (data.isAuthenticated) {
-        console.log("Authenticated")
-        console.log("User ID:", data.throttle_user_id); // For debugging
 
-        userId = data.throttle_user_id
-      } 
-    });
+ // Function to check and update authentication state
+function updateAuthState() {
+  return new Promise((resolve, reject) => {
+    if (window.chrome && chrome.storage && chrome.storage.local) {
+      chrome.storage.local.get(["isAuthenticated", "throttle_user_id"], function(data) {
+        if (data.isAuthenticated) {
+          console.log("Authenticated");
+          console.log("User ID:", data.throttle_user_id); // For debugging
+          userId = data.throttle_user_id;
+          resolve(userId);  // Resolve with the userId
+        } else {
+          console.error("User is not authenticated.");
+          reject("User is not authenticated");
+        }
+      });
+    } else {
+      console.error("chrome.storage.local is not available.");
+      reject("chrome.storage.local is not available");
+    }
+  });
+}
+// Update getUserId to work with promises
+async function getUserId() {
+  if (userId.length > 0) {
+    return userId;
   } else {
-    console.error("chrome.storage.local is not available.");
+    try {
+      const id = await updateAuthState();  // Wait for updateAuthState to return the userId
+      return id;
+    } catch (error) {
+      console.error("Error retrieving userId:", error);
+      return null;
+    }
   }
 }
 
@@ -72,7 +93,7 @@ async function getText() {
   let selectedText = selection.toString().trim();
   console.log(selectedText);
 
-  if (selectedText.length === 0 || selectedText.length > 2000) {
+  if (selectedText.length === 0 || selectedText.length > 5000) {
     // Do nothing
   } else {
     var currentURL = window.location.href;
@@ -104,55 +125,14 @@ async function getText() {
 }
 
 function uploadError(message) {
-
-  updateAuthState()
-
-  const files = message.data
+  session_id = message.sessionId
   const text = message.title
-  // Validate the input to ensure we have a valid text value
-  if (!text || text.trim().length === 0) {
-    console.error("No error title provided.");
-    return;
-  }
-
-  // Create a FormData object to send data to the backend API
-  const formData = new FormData();
-  formData.append("text", text);
-  console.log("Peinting userid",userId);
-  formData.append("userId", userId);
-  
-
-  // If there are files, append them to the FormData
-  if (files && files.length > 0) {
-    for (let i = 0; i < files.length; i++) {
-      console.log("Files found!!")
-      const file = files[i];
-      formData.append("images", file); // Append each file
-    }
-  }
-
-  // Make the API call to upload error details
-  fetch("http://127.0.0.1:8080/file_upload/upload_error", {
-    method: "POST",
-    body: formData,
-  })
-    .then(response => response.json())
-    .then(responseData => {
-      session_id = responseData["session_id"];
-      console.log("Response from server:", responseData);
-
-      // Notify the background script with the session details
-      chrome.runtime.sendMessage({
-        action: "sessionStarted",
-        title: text,
-        id: session_id,
-      });
-
-      console.log("Error logged successfully. Session ID:", session_id);
-    })
-    .catch(error => {
-      console.error("Request failed:", error);
-    });
+  // Notify the background script with the session details
+  chrome.runtime.sendMessage({
+    action: "sessionStarted",
+    title: text,
+    id: session_id,
+  });
 }
 
 

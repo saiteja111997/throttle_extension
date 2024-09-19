@@ -92,10 +92,11 @@ body {
 .bottom-buttons {
   display: flex;
   justify-content: space-between;
+  gap: 10px; /* Add gap for better alignment */
 }
 
 .button {
-  background: linear-gradient(45deg, #F0741B, #D9630F);
+  background-color: #28a745;
   color: #fff;
   border: none;
   cursor: pointer;
@@ -107,12 +108,8 @@ body {
 }
 
 .button:hover {
-  background: linear-gradient(45deg, #D9630F, #F0741B);
+  background-color: #218838;
   transform: scale(1.05);
-}
-
-#full-width-button button {
-  width: 100%;
 }
 
 #error-titles {
@@ -128,6 +125,28 @@ body {
   list-style-type: none;
   padding: 0;
   margin: 0;
+  max-height: 150px; /* Adjust height to show only 3 tiles */
+  overflow-y: auto;
+}
+
+/* Custom scrollbar styles */
+#errorList::-webkit-scrollbar {
+  width: 8px;
+}
+
+#errorList::-webkit-scrollbar-track {
+  background: #333;
+  border-radius: 10px;
+}
+
+#errorList::-webkit-scrollbar-thumb {
+  background-color: #555;
+  border-radius: 10px;
+  border: 2px solid #333;
+}
+
+#errorList::-webkit-scrollbar-thumb:hover {
+  background-color: #888;
 }
 
 #errorList li {
@@ -169,7 +188,6 @@ body {
   transform: scale(1.02);
 }
 
-
 .marquee {
   overflow: hidden;
   position: relative;
@@ -207,3 +225,118 @@ body {
   background: linear-gradient(45deg, #8B0000, #FF0000);
   transform: scale(1.05);
 }
+
+.image-preview {
+  display: flex;
+  flex-wrap: wrap;
+  margin-top: 10px;
+  gap: 10px;
+}
+
+.preview-image {
+  width: 50px;
+  height: 50px;
+  border-radius: 5px;
+  object-fit: cover;
+  border: 1px solid #ccc;
+}
+
+/* Image preview container */
+.preview-wrapper {
+  display: inline-block;
+  position: relative;
+  margin: 10px;
+  border: 1px solid #ddd;
+  padding: 5px;
+  border-radius: 5px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Preview image styling */
+.preview-image {
+  width: 50px;
+  height: 50px;
+  object-fit: cover;
+  border-radius: 5px;
+}
+
+/* Remove button styling */
+.remove-image {
+  position: absolute;
+  top: -10px;
+  right: -10px;
+  background-color: red;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+  font-size: 14px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.remove-image:hover {
+  background-color: darkred;
+}
+
+/* Apply blur effect */
+.blurred {
+  filter: blur(8px); /* Increase blur for a smoother effect */
+  pointer-events: none; /* Disable interactions while loading */
+}
+
+/* Spinner overlay */
+.spinner-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.5); /* Darker overlay with transparency */
+  z-index: 10000; /* Ensure it's above all other elements */
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  pointer-events: none; /* Prevent interaction with the overlay */
+}
+
+/* Spinner itself */
+.spinner {
+  border: 6px solid rgba(255, 255, 255, 0.3); /* White border with transparency */
+  border-top-color: #ffffff; /* White top for visible spinning effect */
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  animation: spin 1s linear infinite;
+}
+
+/* Loading text */
+.spinner-text {
+  margin-top: 20px;
+  font-size: 18px;
+  font-weight: bold;
+  color: #ffffff; /* White text to contrast with dark background */
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5); /* Add a subtle shadow for better visibility */
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+
+
+
+
+
+

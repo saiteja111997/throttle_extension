@@ -62,7 +62,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
                           chrome.tabs.sendMessage(tabId, {
                               action: "startSession",
                               title: message.searchQuery,
-                              data: message.data // Send the files and text data
+                              sessionId: message.sessionId
                           });
                           
                           // Remove the listener to prevent multiple sends
