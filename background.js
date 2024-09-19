@@ -43,8 +43,37 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 });
 
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message.action === "reloadTab") {
+      const searchUrl = `https://www.google.com/search?q=${encodeURIComponent(message.searchQuery)}`;
+      chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+          const currentTab = tabs[0];
 
+          if (currentTab) {
+              // Update the current tab with the new search URL
+              chrome.tabs.update(currentTab.id, { url: searchUrl }, () => {
+                  console.log("Current tab reloaded with search URL:", searchUrl);
 
+                  // After reloading, send the search text and data to the content script in the current tab
+                  chrome.tabs.onUpdated.addListener(function onTabUpdate(tabId, changeInfo, tab) {
+                      // Ensure the tab has fully loaded
+                      if (tabId === currentTab.id && changeInfo.status === 'complete') {
+                          // Send a message to the content script to start the session with the search text and files
+                          chrome.tabs.sendMessage(tabId, {
+                              action: "startSession",
+                              title: message.searchQuery,
+                              data: message.data // Send the files and text data
+                          });
+                          
+                          // Remove the listener to prevent multiple sends
+                          chrome.tabs.onUpdated.removeListener(onTabUpdate);
+                      }
+                  });
+              });
+          }
+      });
+  }
+});
 
 
 function injectContentScripts(tabId) {

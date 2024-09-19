@@ -14,7 +14,7 @@ body {
   border: 1px solid #444;
   border-radius: 15px;
   box-shadow: 0 0 20px rgba(0, 0, 0, 0.4);
-  width: 350px;
+  width: 320px;
   padding: 20px;
   text-align: center;
   color: #eee;
@@ -32,25 +32,69 @@ body {
   margin: 0;
 }
 
-.button-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
+.search-container {
   margin: 20px 0;
 }
 
-.button-grid .button {
+#searchInput {
   width: 100%;
-  padding: 15px;
-  font-size: 1.1em;
+  padding: 10px;
+  margin-bottom: 10px;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+  background-color: #333;
+  color: white;
+  box-sizing: border-box;
 }
 
-.button-container {
-  width: 100%;
-  margin-top: 20px;
+#searchInput::placeholder {
+  color: #999;
 }
 
-button {
+.action-buttons {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.image-upload-label {
+  display: inline-block;
+  cursor: pointer;
+  color: grey;
+  font-size: 1em;
+}
+
+.image-upload-label i {
+  margin-right: 5px;
+}
+
+#imageInput {
+  display: none; /* Hidden input for file upload */
+}
+
+#searchButton {
+  padding: 10px;
+  border: none;
+  border-radius: 5px;
+  background-color: grey;
+  color: white;
+  cursor: not-allowed;
+  width: 70px;
+  transition: background-color 0.3s ease;
+}
+
+#searchButton.active {
+  background-color: green;
+  cursor: pointer;
+}
+
+.bottom-buttons {
+  display: flex;
+  justify-content: space-between;
+}
+
+.button {
   background: linear-gradient(45deg, #F0741B, #D9630F);
   color: #fff;
   border: none;
@@ -58,11 +102,11 @@ button {
   border-radius: 10px;
   font-size: 1.1em;
   transition: background 0.3s ease, transform 0.3s ease;
-  width: 100%;
-  padding: 15px;
+  padding: 10px;
+  width: 48%;
 }
 
-button:hover {
+.button:hover {
   background: linear-gradient(45deg, #D9630F, #F0741B);
   transform: scale(1.05);
 }
