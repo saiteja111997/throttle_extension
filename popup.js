@@ -66,29 +66,16 @@ document.addEventListener("DOMContentLoaded", function() {
           formData.append("images", selectedFiles[i]); // Add the selected images
         }
   
-        // Blur the entire popup and show the spinner
-        const popupContent = document.body;  // Assuming you want to blur the entire popup content
-        popupContent.classList.add("blurred");
+        // Disable the popup content to prevent interactions
+        const popupContent = document.body;  // Assuming you want to disable the entire popup content
+        popupContent.classList.add("popup-disabled");
   
-        // Create a spinner overlay element and show it
-        const spinnerOverlay = document.createElement("div");
-        spinnerOverlay.classList.add("spinner-overlay");
-  
-        // Create spinner
-        const spinner = document.createElement("div");
-        spinner.classList.add("spinner");
-  
-        // Add the spinner text
-        const spinnerText = document.createElement("div");
-        spinnerText.classList.add("spinner-text");
-        spinnerText.textContent = "Uploading data to the server, please wait!!";
-  
-        // Append spinner and text to spinnerOverlay
-        spinnerOverlay.appendChild(spinner);
-        spinnerOverlay.appendChild(spinnerText);
-  
-        // Append spinnerOverlay to the body so it's outside of the blurred area
-        document.body.appendChild(spinnerOverlay);
+        // Change button text to loading and show spinner
+        searchButton.disabled = true;
+        searchButton.textContent = "";
+        const spinner = document.createElement("span");
+        spinner.classList.add("button-spinner");
+        searchButton.appendChild(spinner);
   
         try {
           // Make the asynchronous POST request to upload images, text, and throttle_user_id
@@ -100,11 +87,13 @@ document.addEventListener("DOMContentLoaded", function() {
           if (response.ok) {
             const responseData = await response.json();
             console.log("Response from server:", responseData);
+            let sessionId = responseData["session_id"];
   
             // Send a message to the background script without including data
             chrome.runtime.sendMessage({
               action: "reloadTab",
               searchQuery: errorTitle,
+              sessionId: sessionId,
             });
   
           } else {
@@ -113,11 +102,10 @@ document.addEventListener("DOMContentLoaded", function() {
         } catch (error) {
           console.error("Request failed:", error);
         } finally {
-          // Remove the spinner and unblur the popup after the API call completes
-          popupContent.classList.remove("blurred");
-          if (spinnerOverlay) {
-            spinnerOverlay.remove();
-          }
+          // Re-enable the form elements and reset the button text after the API call completes
+          popupContent.classList.remove("popup-disabled");
+          searchButton.disabled = false;
+          searchButton.textContent = "Go"; // Restore original button text
         }
       }
     });

@@ -2,8 +2,8 @@
 // Listen for a message from the background script
 
 // let id = "";
-session_id = ""
-userId = ""
+let session_id = ""
+let userId = ""
 
 console.log("Content script injection started!!");
 
@@ -30,19 +30,19 @@ function updateAuthState() {
   });
 }
 // Update getUserId to work with promises
-async function getUserId() {
-  if (userId.length > 0) {
-    return userId;
-  } else {
-    try {
-      const id = await updateAuthState();  // Wait for updateAuthState to return the userId
-      return id;
-    } catch (error) {
-      console.error("Error retrieving userId:", error);
-      return null;
-    }
-  }
-}
+// async function getUserId() {
+//   if (userId.length > 0) {
+//     return userId;
+//   } else {
+//     try {
+//       const id = await updateAuthState();  // Wait for updateAuthState to return the userId
+//       return id;
+//     } catch (error) {
+//       console.error("Error retrieving userId:", error);
+//       return null;
+//     }
+//   }
+// }
 
 // Helper function to get XPath for an element
 function getXPath(element) {
@@ -89,6 +89,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 });
 
 async function getText() {
+  updateAuthState()
   var selection = window.getSelection();
   let selectedText = selection.toString().trim();
   console.log(selectedText);
@@ -127,6 +128,8 @@ async function getText() {
 function uploadError(message) {
   session_id = message.sessionId
   const text = message.title
+
+  console.log("Printing session id : ", session_id)
   // Notify the background script with the session details
   chrome.runtime.sendMessage({
     action: "sessionStarted",
