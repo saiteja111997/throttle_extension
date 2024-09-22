@@ -7,7 +7,6 @@ document.addEventListener("DOMContentLoaded", function() {
   const imageInput = document.getElementById("imageInput");
   const imagePreview = document.getElementById("imagePreview");
   let selectedFiles = [];
-  let throttleUserId = "";
 
   // Function to get throttle_user_id from chrome.storage.local
   function getThrottleUserId() {
@@ -212,8 +211,17 @@ document.addEventListener("DOMContentLoaded", function() {
   }
 
   // Function to fetch error titles from backend API
-  function fetchErrorTitles() {
-    fetch('http://127.0.0.1:8080/file_upload/get_latest_unsolved')
+  async function fetchErrorTitles() {
+    const throttleUserId = await getThrottleUserId(); 
+
+    // Create form data
+    const formData = new FormData();
+    formData.append('user_id', throttleUserId);
+
+    fetch('http://127.0.0.1:8080/file_upload/get_latest_unsolved', {
+      method: 'POST',
+      body: formData  // Send form data
+    })
       .then(response => response.json())
       .then(data => {
         const errorList = document.getElementById("errorList");
@@ -235,6 +243,7 @@ document.addEventListener("DOMContentLoaded", function() {
       })
       .catch(error => console.error('Error fetching error titles:', error));
   }
+
 
   // Function to send message to content script
   function sendMessageToContentScript(errorId, title) {
