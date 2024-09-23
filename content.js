@@ -5,7 +5,10 @@
 let session_id = ""
 let userId = ""
 
-console.log("Content script injection started!!");
+// console.log("Content script injection started!!");
+
+// let throttle_user_id =  localStorage.getItem('throttle_user_id');
+// console.log("Throttle user id: " + throttle_user_id);
 
 
  // Function to check and update authentication state
@@ -74,7 +77,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       console.log("Received message, will do something")
       uploadError(message);
     }
-  }
+  } 
 
   //  if (message.action === "updateUserId") {
   //   console.log("Updating user id with value : ", message.userId)
@@ -137,202 +140,6 @@ function uploadError(message) {
     id: session_id,
   });
 }
-
-
-// function uploadError(id) {
-
-//   updateAuthState();
-//   // Create a background overlay
-//   const overlay = document.createElement("div");
-//   overlay.style.position = "fixed";
-//   overlay.style.top = "0";
-//   overlay.style.left = "0";
-//   overlay.style.width = "100%";
-//   overlay.style.height = "100%";
-//   overlay.style.backgroundColor = "rgba(0, 0, 0, 0.5)"; // Semi-transparent black background
-//   overlay.style.zIndex = "9999"; // Place it above the page content
-
-//   // Create the search bar element
-//   const searchBar = document.createElement("div");
-//   searchBar.style.position = "fixed";
-//   searchBar.style.top = "50%";
-//   searchBar.style.left = "50%";
-//   searchBar.style.transform = "translate(-50%, -50%)";
-//   searchBar.style.width = "90%"; // 3/4th width of the viewport
-//   searchBar.style.zIndex = "10000"; // Place it above the overlay
-
-//   // Create a container for the input field and button
-//   const inputContainer = document.createElement("div");
-//   inputContainer.style.display = "flex"; // Display children side by side
-//   inputContainer.style.alignItems = "center"; // Center vertically
-//   inputContainer.style.justifyContent = "center"; // Center horizontally
-//   inputContainer.style.gap = "20px"; // Space between input and button
-
-//   // Create the search input field
-//   const searchInput = document.createElement("input");
-//   searchInput.type = "text";
-//   searchInput.id = "searchInput";
-
-//   // if (type == "error") { 
-//   //   searchInput.placeholder = "eg; -bash: aws: command not found !!";
-//   // } else if (type == "document") {
-//   //   searchInput.placeholder = "eg; How we solved connection timeouts in postgres !!";
-//   // }
-
-  
-//   searchInput.style.width = "70%"; // Adjust the width as needed
-//   searchInput.style.border = "none"; // Remove the input border
-//   searchInput.style.borderRadius = "50px"; // Rounded corners
-//   searchInput.style.background = "linear-gradient(to right, #000000, #333333)"; // Shiny black linear gradient
-//   searchInput.style.backgroundColor = "#333333"; // Set a base color
-//   searchInput.style.border = "1px solid #000000"; // Black border
-//   searchInput.style.color = "#FFFFFF"; // White text color
-//   searchInput.style.padding = "20px";
-//   searchInput.style.boxShadow = "0px 0px 10px rgba(0, 0, 0, 0.5)"; // Box shadow
-
-//   // Create the camera button (input type file)
-//   const cameraButton = document.createElement("label");
-//   cameraButton.htmlFor = "screenshotInput";
-//   cameraButton.style.cursor = "pointer"; // Change cursor to pointer
-
-//   iconUrl = chrome.runtime.getURL("images/camera.png");
-//   cameraButton.innerHTML = `<img src="${iconUrl}" alt="Camera">`;
-//   const screenshotInput = document.createElement("input");
-//   screenshotInput.type = "file";
-//   screenshotInput.id = "screenshotInput";
-//   screenshotInput.accept = "image/*"; // Accept image files
-//   screenshotInput.style.display = "none"; // Hide the file input
-//   screenshotInput.multiple = true; // Allow multiple file selection
-//   screenshotInput.addEventListener("change", (event) => {
-//     const selectedFiles = event.target.files;
-//     if (selectedFiles.length > 0) {
-//       const filesToProcess = selectedFiles.length <= 4 ? selectedFiles : Array.from(selectedFiles).slice(0, 4);
-//       filesToProcess.forEach((file, index) => {
-//         console.log(`Selected file ${index + 1}:`, file);
-//       });
-//     }
-//   });
-
-//   // Create the search button
-//   const searchButton = document.createElement("button");
-//   searchButton.id = "searchButton";
-//   searchButton.textContent = "Go!!";
-//   searchButton.style.borderRadius = "50px"; // Rounded button
-//   searchButton.style.backgroundColor = "#333333"; // Shiny black button background color
-//   searchButton.style.color = "#FFFFFF"; // White button text color
-//   searchButton.style.padding = "20px"; // Adjust the padding as needed
-//   searchButton.style.border = "1px solid #000000"; // Black border
-//   searchButton.style.boxShadow = "0px 0px 10px rgba(0, 0, 0, 0.5)"; // Box shadow
-
-//   // Create the spinner element
-//   const spinner = document.createElement("div");
-//   spinner.id = "spinner";
-//   spinner.style.display = "none"; // Hide the spinner initially
-//   spinner.style.border = "8px solid #f3f3f3"; // Light grey
-//   spinner.style.borderTop = "8px solid #333333"; // Black
-//   spinner.style.borderRadius = "50%";
-//   spinner.style.width = "40px";
-//   spinner.style.height = "40px";
-//   spinner.style.animation = "spin 1s linear infinite";
-
-//   // Add the spinner CSS
-//   const style = document.createElement("style");
-//   style.innerHTML = `
-//     @keyframes spin {
-//       0% { transform: rotate(0deg); }
-//       100% { transform: rotate(360deg); }
-//     }
-//   `;
-//   document.head.appendChild(style);
-
-//   // Append the elements to the input container
-//   inputContainer.appendChild(searchInput);
-//   inputContainer.appendChild(cameraButton);
-//   inputContainer.appendChild(screenshotInput);
-//   inputContainer.appendChild(searchButton);
-//   inputContainer.appendChild(spinner);
-
-//   // Append the container to the search bar
-//   searchBar.appendChild(inputContainer);
-
-//   // Add an event listener to the overlay to remove the overlay and search bar when clicked
-//   overlay.addEventListener("click", () => {
-//     overlay.remove();
-//     searchBar.remove();
-//   });
-
-//   document.body.appendChild(overlay);
-//   document.body.appendChild(searchBar);
-
-//   // Focus the search bar
-//   searchBar.focus();
-
-//   // Add an event listener for the search button to prevent the overlay removal when the button is clicked
-//   searchButton.addEventListener("click", async (event) => {
-//     const searchText = searchInput.value.trim(); // Ensure text is trimmed
-//     if (searchText.length === 0) {
-//         alert("Please enter a valid search query.");
-//         return;
-//     }
-
-//     const formData = new FormData();
-//     formData.append("text", searchText);
-//     formData.append("userId", userId);
-
-//     const screenshotInput = document.getElementById("screenshotInput");
-//     if (screenshotInput.files.length > 0) {
-//         for (let i = 0; i < screenshotInput.files.length; i++) {
-//             const file = screenshotInput.files[i];
-//             formData.append("images", file);
-//         }
-//     }
-
-//     // Show spinner and disable the search button
-//     spinner.style.display = "block";
-//     searchButton.disabled = true;
-//     searchButton.style.backgroundColor = "#555555"; // Change color to indicate disabled state
-
-//     try {
-//         const response = await fetch("http://127.0.0.1:8080/file_upload/upload_error", {
-//             method: "POST",
-//             body: formData,
-//         });
-
-//         if (response.ok) {
-//             const responseData = await response.json();
-//             console.log("Response from server:", responseData);
-//             id = responseData["session_id"];
-//             console.log("Error id : ", id);
-
-//             // Notify the popup script 
-//             chrome.runtime.sendMessage({
-//                 action: "sessionStarted",
-//                 title: searchText,
-//                 id: id
-//             });
-
-//             // Remove the overlay and search bar after successful response
-//             overlay.remove();
-//             searchBar.remove();
-//         } else {
-//             console.error("Request failed with status:", response.status);
-//         }
-//     } catch (error) {
-//         console.error("Network error:", error);
-//     } finally {
-//         // Hide spinner and re-enable the search button
-//         spinner.style.display = "none";
-//         searchButton.disabled = false;
-//         searchButton.style.backgroundColor = "#333333"; // Restore original color
-
-//         // Ensure the overlay and search bar are removed even if there's an error
-//         overlay.remove();
-//         searchBar.remove();
-//     }
-
-//     event.stopPropagation(); // Prevent the click event from propagating to the overlay
-// });
-// }
 
 // Dynamically load FontAwesome CSS
 const link = document.createElement('link');
@@ -473,4 +280,4 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 });
 
-console.log("Content script injection ended!!");
+// console.log("Content script injection ended!!");

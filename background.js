@@ -35,6 +35,25 @@ chrome.runtime.onMessageExternal.addListener((message, sender, sendResponse) => 
   }
 });
 
+chrome.runtime.onMessageExternal.addListener((message, sender, sendResponse) => {
+  if (message.action === "deleteThrottleAuthState") {
+    console.log("Deleting user id");
+
+    // Remove user authentication state and user ID from local storage
+    chrome.storage.local.remove(["isAuthenticated", "throttle_user_id"], function() {
+      if (chrome.runtime.lastError) {
+        console.error("Error removing user ID:", chrome.runtime.lastError);
+        sendResponse({ success: false, error: chrome.runtime.lastError });
+      } else {
+        console.log("User ID and authentication state removed successfully.");
+        sendResponse({ success: true });
+      }
+    });
+
+    return true; // Will respond asynchronously
+  }
+});
+
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === "openNewTab") {
       const searchUrl = `https://www.google.com/search?q=${encodeURIComponent(message.searchQuery)}`;
