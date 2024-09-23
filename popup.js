@@ -217,6 +217,7 @@ document.addEventListener("DOMContentLoaded", function() {
     // Create form data
     const formData = new FormData();
     formData.append('user_id', throttleUserId);
+    console.log("Printing user Id...", throttleUserId);
 
     fetch('http://127.0.0.1:8080/file_upload/get_latest_unsolved', {
       method: 'POST',

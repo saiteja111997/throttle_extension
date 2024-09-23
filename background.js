@@ -19,7 +19,8 @@ function sendMessageToAllTabs(message) {
 
 // Add a listener in the background script to handle messages from the React app.
 chrome.runtime.onMessageExternal.addListener((message, sender, sendResponse) => {
-  if (message.action === "setAuthState") {
+  if (message.action === "setThrottleAuthState") {
+    console.log("Printing user id : ",message.userId);
     chrome.storage.local.set(
       { 
         isAuthenticated: message.isAuthenticated,
