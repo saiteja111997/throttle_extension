@@ -5,7 +5,9 @@
 let session_id = ""
 let userId = ""
 
-// console.log("Content script injection started!!");
+console.log("Content script injection started!!");
+
+
 
 // let throttle_user_id =  localStorage.getItem('throttle_user_id');
 // console.log("Throttle user id: " + throttle_user_id);
@@ -32,20 +34,6 @@ function updateAuthState() {
     }
   });
 }
-// Update getUserId to work with promises
-// async function getUserId() {
-//   if (userId.length > 0) {
-//     return userId;
-//   } else {
-//     try {
-//       const id = await updateAuthState();  // Wait for updateAuthState to return the userId
-//       return id;
-//     } catch (error) {
-//       console.error("Error retrieving userId:", error);
-//       return null;
-//     }
-//   }
-// }
 
 // Helper function to get XPath for an element
 function getXPath(element) {
@@ -280,4 +268,4 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 });
 
-// console.log("Content script injection ended!!");
+console.log("Content script injection ended!!");

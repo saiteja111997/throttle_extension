@@ -281,19 +281,6 @@ document.addEventListener("DOMContentLoaded", function() {
 
   // Event listener for logout button
   document.getElementById("logout-button").addEventListener("click", function() {
-    // Clear user ID from local storage
-    chrome.storage.local.remove(['isAuthenticated', 'throttle_user_id'], function() {
-      console.log('User logged out and user ID removed.');
-
-      // Send a message to React app to remove user ID from its local storage
-      // chrome.runtime.sendMessage({
-      //   action: "deleteUserIdFromBrowser"
-      // }, function(response) {
-      //   console.log('Message sent to React app to delete user ID from local storage.');
-      // });
-
-      updateAuthState();
-    });
-    window.close();
+    chrome.tabs.create({ url: "http://localhost:3000/logout" });
   });
 });

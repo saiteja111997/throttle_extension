@@ -180,15 +180,15 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   // }
 });
 
-function sendUpdateStateInIntervals() {
-  updateIntervalId = setInterval(() => {
-    sendMessageToAllTabs({
-      action: "updateState",
-      title: title,
-      id: id,
-    });
-  }, 30000);
-}
+// function sendUpdateStateInIntervals() {
+//   updateIntervalId = setInterval(() => {
+//     sendMessageToAllTabs({
+//       action: "updateState",
+//       title: title,
+//       id: id,
+//     });
+//   }, 30000);
+// }
 
 function stopUpdateStateIntervals() {
   if (updateIntervalId) {
@@ -244,7 +244,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       title = message.title
       id = message.id
 
-      sendUpdateStateInIntervals()
+      // sendUpdateStateInIntervals()
 
     } 
     
