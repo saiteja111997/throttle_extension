@@ -4,7 +4,7 @@ document.addEventListener("DOMContentLoaded", function() {
   const fullWidthButton = document.getElementById("full-width-button");
   const searchInput = document.getElementById("searchInput");
   const searchButton = document.getElementById("searchButton");
-  const imageInput = document.getElementById("imageInput");
+  const fileUploadButton = document.getElementById("fileUploadButton");
   const imagePreview = document.getElementById("imagePreview");
   let selectedFiles = [];
 
@@ -38,95 +38,51 @@ document.addEventListener("DOMContentLoaded", function() {
       if (!searchButton.disabled) {
         const errorTitle = searchInput.value.trim();
   
-        // Ensure image input exists
-        if (!imageInput) {
-          console.error("imageInput is not found. Check if the element exists in the DOM.");
-          return;
-        }
-  
-        // Get selected files and form data
-        const selectedFiles = imageInput.files;
         if (selectedFiles.length === 0) {
           console.error("No files selected.");
         }
   
-        // Get throttle_user_id from localStorage (or using chrome.storage.local)
-        const throttleUserId = await getThrottleUserId(); // Assuming this function is already defined
+        // Get throttle_user_id from chrome.storage.local
+        const throttleUserId = await getThrottleUserId();
         if (!throttleUserId) {
           console.error("No throttle_user_id found.");
           return;
         }
-  
-        // Prepare the form data
-        const formData = new FormData();
-        formData.append("text", errorTitle); // Add the text input
-        formData.append("userId", throttleUserId); // Add throttle_user_id
-        for (let i = 0; i < selectedFiles.length; i++) {
-          formData.append("images", selectedFiles[i]); // Add the selected images
-        }
-  
-        // Disable the popup content to prevent interactions
-        const popupContent = document.body;  // Assuming you want to disable the entire popup content
-        popupContent.classList.add("popup-disabled");
-  
-        // Change button text to loading and show spinner
-        searchButton.disabled = true;
-        searchButton.textContent = "";
-        const spinner = document.createElement("span");
-        spinner.classList.add("button-spinner");
-        searchButton.appendChild(spinner);
-  
-        try {
-          // Make the asynchronous POST request to upload images, text, and throttle_user_id
-          const response = await fetch("http://127.0.0.1:8080/file_upload/upload_error", {
-            method: "POST",
-            body: formData,
-          });
-  
-          if (response.ok) {
-            const responseData = await response.json();
-            console.log("Response from server:", responseData);
-            let sessionId = responseData["session_id"];
-  
-            // Send a message to the background script without including data
-            chrome.runtime.sendMessage({
-              action: "reloadTab",
-              searchQuery: errorTitle,
-              sessionId: sessionId,
-            });
-  
-          } else {
-            console.error("Server responded with an error:", response.statusText);
-          }
-        } catch (error) {
-          console.error("Request failed:", error);
-        } finally {
-          // Re-enable the form elements and reset the button text after the API call completes
-          popupContent.classList.remove("popup-disabled");
-          searchButton.disabled = false;
-          searchButton.textContent = "Go"; // Restore original button text
-        }
+
+        // Send a message to the background script with the data
+        chrome.runtime.sendMessage({
+          action: "reloadTab",
+          searchQuery: errorTitle,
+          throttleUserId: throttleUserId,
+          files: selectedFiles.map(file => ({ name: file.name, type: file.type, lastModified: file.lastModified }))
+        });
+
+        console.log("Message sent to background script for file upload.");
       }
     });
 
-    // Handle image input changes for preview
-    imageInput.addEventListener("change", function () {
-      if (imageInput.files.length > 0) {
-        const files = Array.from(imageInput.files);
-        console.log("Files found > 1")
+    // Programmatically open the file picker when the button is clicked
+    fileUploadButton.addEventListener("click", () => {
+      const fileInput = document.createElement("input");
+      fileInput.type = "file";
+      fileInput.accept = "image/*";
+      fileInput.multiple = true;
 
+      fileInput.addEventListener("change", function () {
+        const files = Array.from(fileInput.files);
+        
         // Make sure the total selected files don't exceed 4
         if (selectedFiles.length + files.length > 4) {
           alert("You can only upload a maximum of 4 images.");
           return;
         }
 
-        // Add the selected files to the `selectedFiles` array
         selectedFiles = selectedFiles.concat(files);
-
-        // Update the image previews
         updateImagePreviews();
-      }
+      });
+
+      // Trigger the file picker
+      fileInput.click();
     });
   }
 
@@ -219,7 +175,7 @@ document.addEventListener("DOMContentLoaded", function() {
     formData.append('user_id', throttleUserId);
     console.log("Printing user Id...", throttleUserId);
 
-    fetch('http://127.0.0.1:8080/file_upload/get_latest_unsolved', {
+    fetch('https://lswu0lieod.execute-api.us-east-1.amazonaws.com/prod/file_upload/get_latest_unsolved', {
       method: 'POST',
       body: formData  // Send form data
     })
@@ -271,16 +227,19 @@ document.addEventListener("DOMContentLoaded", function() {
 
   // Event listener for login/register button
   document.getElementById("login-button").addEventListener("click", function() {
-    chrome.tabs.create({ url: "http://127.0.0.1:3000/login" });
+    // chrome.tabs.create({ url: "https://thethrottle.ai/#/login" });
+    chrome.tabs.create({ url: "http://localhost:3000/#/login" });
   });
 
   // Event listener for going to the dashboard
   document.getElementById("goToDashboardButton").addEventListener("click", function() {
-    chrome.tabs.create({ url: "http://localhost:3000/dashboard" });
+    // chrome.tabs.create({ url: "https://thethrottle.ai/#/dashboard" });
+    chrome.tabs.create({ url: "http://localhost:3000/#/dashboard" });
   });
 
   // Event listener for logout button
   document.getElementById("logout-button").addEventListener("click", function() {
-    chrome.tabs.create({ url: "http://localhost:3000/logout" });
+    // chrome.tabs.create({ url: "https://thethrottle.ai/#/logout" });
+    chrome.tabs.create({ url: "http://localhost:3000/#/logout" });
   });
 });

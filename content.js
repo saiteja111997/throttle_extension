@@ -99,7 +99,7 @@ async function getText() {
     console.log("Printing error id : ", session_id)
 
     try {
-      const response = await fetch("http://127.0.0.1:8080/file_upload/user_action", {
+      const response = await fetch("https://lswu0lieod.execute-api.us-east-1.amazonaws.com/prod/file_upload/user_action", {
         method: "POST",
         body: formData,
       });
@@ -231,7 +231,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     document.getElementById("tick-icon").addEventListener("click", () => {
       // Handle tick action (e.g., mark as done and open new page)
       console.log("Printing the error id before opening the browser tab, errorID : ", message.id);
-      const url = `http://localhost:3000/preDocEdit/?error_id=${message.id}`;
+      // const url = `https://thethrottle.ai/#/preDocEdit/?error_id=${message.id}`;
+      const url = `http://localhost:3000/#/preDocEdit/?error_id=${message.id}`;
       window.open(url, '_blank');
       timerContainer.remove();
       chrome.runtime.sendMessage({
