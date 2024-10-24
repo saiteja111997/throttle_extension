@@ -56,7 +56,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
       // Notify the popup script 
       chrome.runtime.sendMessage({
-        action: "sessionStarted",
+        action: "oldSessionStarted",
         title: message.title,
         id: message.id,
       });
@@ -174,6 +174,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (document.getElementById("timer-container")) {
       document.getElementById("timer-container").remove();
     }
+    console.log("Update state called : " + message.action);
 
     // window.close();
 

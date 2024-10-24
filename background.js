@@ -153,42 +153,8 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
         console.log("Message sent successfully");
       }
     })
-
-  //   chrome.tabs.sendMessage(tabId, {
-  //     action: "updateUserId",
-  //     userId: message.userId,
-  // }, () => {
-  //   if (chrome.runtime.lastError) {
-  //     console.error(chrome.runtime.lastError);
-  //   } else {
-  //     console.log("Message sent successfully");
-  //   }
-  // })
 } 
-  // else if (changeInfo.status === 'complete' && !sessionActive) {
-  //   if (tab.url.startsWith('https://google.com')) {
-  //     chrome.tabs.sendMessage(tabId, {
-  //       action: "activatePopUp"
-  //     }, () => {
-  //       if (chrome.runtime.lastError) {
-  //         console.error(chrome.runtime.lastError);
-  //       } else {
-  //         console.log("Message sent successfully");
-  //       }
-  //     })
-  //   }
-  // }
 });
-
-// function sendUpdateStateInIntervals() {
-//   updateIntervalId = setInterval(() => {
-//     sendMessageToAllTabs({
-//       action: "updateState",
-//       title: title,
-//       id: id,
-//     });
-//   }, 30000);
-// }
 
 function stopUpdateStateIntervals() {
   if (updateIntervalId) {
@@ -198,43 +164,24 @@ function stopUpdateStateIntervals() {
   }
 }
 
+function sendUpdateStateInIntervals() {
+  updateIntervalId = setInterval(() => {
+    sendMessageToAllTabs({
+      action: "updateState",
+      title: title,
+      id: id,
+    });
+  }, 30000);
+}
+
 // Listen for timer state updates from content scripts
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
- 
-    // if (message.action === "updateUserId") {
-    //   sendMessageToAllTabs({
-    //     action: "updateUserId",
-    //     userId: message.userId,
-    //   })
-
-    //   userId = message.userId
-
-    // }
-
-    // if (message.action === "updateUserIdFromBackground") {
-    //   sendMessageToAllTabs({
-    //     action: "updateUserIdFromBackgroundReply",
-    //     userId: userId,
-    //   })
-    // }
 
     if (message.action === "sessionStarted") {
       sessionActive = true
 
       // let startTime = Date.now();
       console.log("Entered background script")
-      // timeIntervalId = setInterval(() => {
-      //   // if (startTime) {
-      //     console.log("Sending message to all tabs!!")
-      //     elapsedMillis = Date.now() - startTime;
-      //     elapsedMinutes = Math.floor(elapsedMillis / (60 * 1000));
-      //     sendMessageToAllTabs({
-      //       action: "updateTimerState",
-      //       initialState: false,
-      //       time: elapsedMinutes
-      //     })
-      //   // }
-      // }, 30000)
       sendMessageToAllTabs({
         action: "updateState",
         title: message.title,
@@ -244,9 +191,46 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       title = message.title
       id = message.id
 
-      // sendUpdateStateInIntervals()
-
+      sendUpdateStateInIntervals()
     } 
+
+
+    if (message.action === "oldSessionStarted") {
+      sessionActive = true
+
+      const searchUrl = `https://www.google.com/search?q=${encodeURIComponent(message.title)}`;
+      chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+          const currentTab = tabs[0];
+
+          if (currentTab) {
+              // Update the current tab with the new search URL
+              chrome.tabs.update(currentTab.id, { url: searchUrl }, () => {
+                  console.log("Current tab reloaded with search URL:", searchUrl);
+
+                  // After reloading, send the search text and data to the content script in the current tab
+                  chrome.tabs.onUpdated.addListener(function onTabUpdate(tabId, changeInfo, tab) {
+                      // Ensure the tab has fully loaded
+                      if (tabId === currentTab.id && changeInfo.status === 'complete') {
+                          console.log("Entered background script")
+                          sendMessageToAllTabs({
+                            action: "updateState",
+                            title: message.title,
+                            id: message.id,
+                          })
+
+                          title = message.title
+                          id = message.id
+                          
+                          sendUpdateStateInIntervals()
+                          
+                          // Remove the listener to prevent multiple sends
+                          chrome.tabs.onUpdated.removeListener(onTabUpdate);
+                      }
+                  });
+              });
+          }
+      });
+    }
     
     if (message.action === "removeTimer") {
       // clearInterval(timeIntervalId)
@@ -292,11 +276,3 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       }
     }
 })
-
-// Background Script (background.js)
-// chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
-//   if (request.action === "sessionStarted") {
-//     console.log("Message received by the background script!!")
-//     chrome.runtime.sendMessage(request); // Relay the message to other parts of the extension
-//   }
-// });
