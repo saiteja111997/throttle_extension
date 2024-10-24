@@ -129,6 +129,75 @@ function uploadError(message) {
   });
 }
 
+// Function to show the image upload modal
+function showImageUploadModal() {
+  // Create the modal background
+  const modalBackground = document.createElement('div');
+  modalBackground.id = 'modal-background';
+  modalBackground.style.position = 'fixed';
+  modalBackground.style.top = '0';
+  modalBackground.style.left = '0';
+  modalBackground.style.width = '100%';
+  modalBackground.style.height = '100%';
+  modalBackground.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
+  modalBackground.style.display = 'flex';
+  modalBackground.style.justifyContent = 'center';
+  modalBackground.style.alignItems = 'center';
+  modalBackground.style.zIndex = '1000';
+
+  // Create the modal content
+  const modalContent = document.createElement('div');
+  modalContent.style.background = '#fff';
+  modalContent.style.padding = '20px';
+  modalContent.style.borderRadius = '10px';
+  modalContent.style.textAlign = 'center';
+  modalContent.style.width = '300px';
+
+  // Add HTML content to the modal
+  modalContent.innerHTML = `
+      <h3>Upload Image</h3>
+      <input type="file" id="image-file-input" accept="image/*" />
+      <button id="upload-button" style="margin-top: 10px; cursor: pointer; padding: 5px 10px; background-color: #28a745; color: white; border: none; border-radius: 5px;">Upload</button>
+      <button id="close-modal-button" style="margin-top: 10px; cursor: pointer; padding: 5px 10px; background-color: red; color: white; border: none; border-radius: 5px;">Close</button>
+  `;
+
+  modalBackground.appendChild(modalContent);
+  document.body.appendChild(modalBackground);
+
+  // Add event listener for the upload button
+  document.getElementById("upload-button").addEventListener("click", async () => {
+      const fileInput = document.getElementById("image-file-input");
+      if (fileInput.files.length > 0) {
+          const selectedFile = fileInput.files[0];
+          const formData = new FormData();
+          formData.append("image", selectedFile);
+          formData.append("session_id", session_id);
+
+          try {
+              const response = await fetch("https://your-backend-url.com/upload", {
+                  method: "POST",
+                  body: formData,
+              });
+
+              if (response.ok) {
+                  console.log("Image uploaded successfully!");
+              } else {
+                  console.error("Error uploading image:", response.statusText);
+              }
+          } catch (error) {
+              console.error("Request failed:", error);
+          }
+      } else {
+          alert("Please select an image to upload.");
+      }
+  });
+
+  // Add event listener for the close button
+  document.getElementById("close-modal-button").addEventListener("click", () => {
+      modalBackground.remove();
+  });
+}
+
 // Dynamically load FontAwesome CSS
 const link = document.createElement('link');
 link.rel = 'stylesheet';
@@ -172,86 +241,77 @@ let timerDisplay, timerContainer, startStopButton, isTimerRunning, seconds;
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === "updateState") {
     if (document.getElementById("timer-container")) {
-      document.getElementById("timer-container").remove();
+        document.getElementById("timer-container").remove();
     }
-    console.log("Update state called : " + message.action);
 
-    // window.close();
-
-    updateAuthState()
-
-    session_id = message.id
+    console.log("Update state called: " + message.action);
+    updateAuthState();
+    session_id = message.id;
 
     console.log("Update state called!!");
     const timerContainer = document.createElement('div');
     timerContainer.id = 'timer-container';
     timerContainer.style.position = 'fixed';
-    timerContainer.style.bottom = '20px'; // Adjusted position to the bottom
-    timerContainer.style.right = '20px'; // Adjusted position to the right
-    timerContainer.style.width = '250px'; // Adjusted width
-    timerContainer.style.height = 'auto'; // Auto height
-
-    // Gradient background
+    timerContainer.style.bottom = '20px';
+    timerContainer.style.right = '20px';
+    timerContainer.style.width = '250px';
+    timerContainer.style.height = 'auto';
     timerContainer.style.background = 'linear-gradient(45deg, #333333, #000000)';
     timerContainer.style.borderRadius = '10px';
     timerContainer.style.padding = '15px';
     timerContainer.style.boxShadow = '0px 0px 10px rgba(0, 0, 0, 0.5)';
-    timerContainer.style.cursor = 'grab'; // Set cursor to grab for draggable
+    timerContainer.style.cursor = 'grab';
 
     document.body.appendChild(timerContainer);
-
-    // Make the timer draggable
     makeTimerDraggable(timerContainer);
 
-    // HTML template
-    timerContainer.innerHTML = `
-      <div style="padding: 10px; background: linear-gradient(45deg, #333333, #000000); border-radius: 10px; box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.5);">
-        <div style="display: flex; align-items: center; overflow: hidden; white-space: nowrap;">
-          <div style="flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-right: 10px;">
-            <marquee behavior="scroll" direction="left" scrollamount="3" style="color: #FFFFFF;">
-              ${message.title}
-            </marquee>
-          </div>
-          <div style="display: flex; gap: 10px;">
+    // HTML template with left and right blocks properly aligned with consistent width
+timerContainer.innerHTML = `
+<div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; background: linear-gradient(45deg, #3a3a3a, #1e1e1e); border-radius: 10px; box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.5);">
+    <div style="flex: 1; display: flex; align-items: center; justify-content: center; padding-right: 10px;">
+        <marquee behavior="scroll" direction="left" scrollamount="3" style="color: #FFFFFF; width: 100%;">
+          ${message.title}
+        </marquee>
+    </div>
+    <div style="display: flex; flex-direction: column; align-items: center; gap: 10px; width: 80px;">
+        <div style="display: flex; gap: 5px; justify-content: center; width: 100%;">
             <i id="cancel-icon" class="fas fa-times" style="cursor: pointer; color: red;" title="Cancel journey"></i>
             <i id="tick-icon" class="fas fa-check" style="cursor: pointer; color: green;" title="End journey"></i>
             <i id="pause-icon" class="fas fa-pause" style="cursor: pointer; color: yellow;" title="Pause journey"></i>
-          </div>
         </div>
-      </div>
-    `;
+        <button id="add-images-btn" style="display: flex; align-items: center; gap: 5px; justify-content: center; padding: 5px; background: #444; border: none; border-radius: 5px; cursor: pointer; color: #ffffff; width: 100%; max-width: 80px;">
+            <i class="fas fa-camera"></i> Add Images
+        </button>
+    </div>
+</div>
+`;
 
+
+    // Add event listeners for icons
     document.getElementById("cancel-icon").addEventListener("click", () => {
-      // Handle cancel action
-      timerContainer.remove();
-      chrome.runtime.sendMessage({
-        action: "removeTimer",
-      });
+        timerContainer.remove();
+        chrome.runtime.sendMessage({ action: "removeTimer" });
     });
 
     document.getElementById("tick-icon").addEventListener("click", () => {
-      // Handle tick action (e.g., mark as done and open new page)
-      console.log("Printing the error id before opening the browser tab, errorID : ", message.id);
-      // const url = `https://thethrottle.ai/#/preDocEdit/?error_id=${message.id}`;
-      const url = `http://localhost:3000/#/preDocEdit/?error_id=${message.id}`;
-      window.open(url, '_blank');
-      timerContainer.remove();
-      chrome.runtime.sendMessage({
-        action: "removeTimer",
-      });
+        const url = `http://localhost:3000/#/preDocEdit/?error_id=${message.id}`;
+        window.open(url, '_blank');
+        timerContainer.remove();
+        chrome.runtime.sendMessage({ action: "removeTimer" });
     });
 
     document.getElementById("pause-icon").addEventListener("click", () => {
-      // Handle pause action (e.g., toggle pause/resume)
-      console.log("Pause action clicked");
-      // Implement pause/resume functionality as needed
-      chrome.runtime.sendMessage({
-        action: "pauseTimer",
-      });
+        console.log("Pause action clicked");
+        chrome.runtime.sendMessage({ action: "pauseTimer" });
+    });
+
+    // Add event listener for the "Add Images" button
+    document.getElementById("add-image-button").addEventListener("click", () => {
+        showImageUploadModal();
     });
 
     window.addEventListener("mouseup", getText);
-  } else if (message.action === "removeTimer") {
+} else if (message.action === "removeTimer") {
     const timerContainer = document.getElementById("timer-container");
     if (timerContainer) {
       timerContainer.remove();
