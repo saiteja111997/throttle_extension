@@ -8,93 +8,125 @@ document.addEventListener("DOMContentLoaded", function() {
   const imagePreview = document.getElementById("imagePreview");
   let selectedFiles = [];
 
+  // Restore state from local storage on popup load
+  restoreState();
+
+  // Function to restore state from Chrome local storage
+  function restoreState() {
+    chrome.storage.local.get(["errorTitle", "storedImages"], function(data) {
+      if (data.errorTitle) {
+        searchInput.value = data.errorTitle;
+        validateInput(); // Enable the "Go" button if input is valid
+      }
+
+      if (data.storedImages) {
+        selectedFiles = data.storedImages.map(file => {
+          const blob = new Blob([new Uint8Array(file.buffer)], { type: file.type });
+          const newFile = new File([blob], file.name, { type: file.type });
+          return newFile;
+        });
+        updateImagePreviews();
+      }
+    });
+  }
+
+  // Function to save the state to local storage
+  function saveState() {
+    const filesToStore = selectedFiles.map(file => {
+      return file.arrayBuffer().then(buffer => ({
+        name: file.name,
+        type: file.type,
+        buffer: Array.from(new Uint8Array(buffer))
+      }));
+    });
+
+    Promise.all(filesToStore).then(storedImages => {
+      chrome.storage.local.set({
+        errorTitle: searchInput.value.trim(),
+        storedImages: storedImages
+      });
+    });
+  }
+
   // Function to get throttle_user_id from chrome.storage.local
   function getThrottleUserId() {
     return new Promise((resolve, reject) => {
       if (window.chrome && chrome.storage && chrome.storage.local) {
         chrome.storage.local.get(["isAuthenticated", "throttle_user_id"], function(data) {
           if (data.isAuthenticated) {
-            console.log("Authenticated");
-            console.log("User ID:", data.throttle_user_id); // For debugging
-            resolve(data.throttle_user_id);  // Resolve with the throttle_user_id
+            resolve(data.throttle_user_id);
           } else {
-            console.error("User is not authenticated.");
             reject("User is not authenticated");
           }
         });
       } else {
-        console.error("chrome.storage.local is not available.");
         reject("chrome.storage.local is not available");
       }
     });
   }
 
-
   // Enable Go button when the user types in the search input
   if (searchInput && searchButton) {
-    searchInput.addEventListener("input", validateInput);
+    searchInput.addEventListener("input", () => {
+      validateInput();
+      saveState(); // Save the current state whenever the input changes
+    });
 
     searchButton.addEventListener("click", async function () {
       if (!searchButton.disabled) {
         const errorTitle = searchInput.value.trim();
-  
+
         // Ensure image input exists
         if (!imageInput) {
           console.error("imageInput is not found. Check if the element exists in the DOM.");
           return;
         }
-  
-        // Get selected files and form data
-        const selectedFiles = imageInput.files;
-        if (selectedFiles.length === 0) {
-          console.error("No files selected.");
-        }
-  
-        // Get throttle_user_id from localStorage (or using chrome.storage.local)
-        const throttleUserId = await getThrottleUserId(); // Assuming this function is already defined
+
+        // Get throttle_user_id from chrome.storage.local
+        const throttleUserId = await getThrottleUserId();
         if (!throttleUserId) {
           console.error("No throttle_user_id found.");
           return;
         }
-  
+
         // Prepare the form data
         const formData = new FormData();
-        formData.append("text", errorTitle); // Add the text input
-        formData.append("userId", throttleUserId); // Add throttle_user_id
+        formData.append("text", errorTitle);
+        formData.append("userId", throttleUserId);
         for (let i = 0; i < selectedFiles.length; i++) {
-          formData.append("images", selectedFiles[i]); // Add the selected images
+          formData.append("images", selectedFiles[i]);
         }
-  
+
         // Disable the popup content to prevent interactions
-        const popupContent = document.body;  // Assuming you want to disable the entire popup content
+        const popupContent = document.body;
         popupContent.classList.add("popup-disabled");
-  
+
         // Change button text to loading and show spinner
         searchButton.disabled = true;
         searchButton.textContent = "";
         const spinner = document.createElement("span");
         spinner.classList.add("button-spinner");
         searchButton.appendChild(spinner);
-  
+
         try {
-          // Make the asynchronous POST request to upload images, text, and throttle_user_id
-          const response = await fetch("http://127.0.0.1:8080/file_upload/upload_error", {
+          const response = await fetch("https://lswu0lieod.execute-api.us-east-1.amazonaws.com/prod/file_upload/upload_error", {
             method: "POST",
             body: formData,
           });
-  
+
           if (response.ok) {
             const responseData = await response.json();
-            console.log("Response from server:", responseData);
             let sessionId = responseData["session_id"];
-  
-            // Send a message to the background script without including data
+
+            // Send a message to the background script
             chrome.runtime.sendMessage({
               action: "reloadTab",
               searchQuery: errorTitle,
               sessionId: sessionId,
             });
-  
+
+            // Clear storage after successful submission
+            chrome.storage.local.remove(["errorTitle", "storedImages"]);
           } else {
             console.error("Server responded with an error:", response.statusText);
           }
@@ -104,7 +136,7 @@ document.addEventListener("DOMContentLoaded", function() {
           // Re-enable the form elements and reset the button text after the API call completes
           popupContent.classList.remove("popup-disabled");
           searchButton.disabled = false;
-          searchButton.textContent = "Go"; // Restore original button text
+          searchButton.textContent = "Go";
         }
       }
     });
@@ -113,7 +145,6 @@ document.addEventListener("DOMContentLoaded", function() {
     imageInput.addEventListener("change", function () {
       if (imageInput.files.length > 0) {
         const files = Array.from(imageInput.files);
-        console.log("Files found > 1")
 
         // Make sure the total selected files don't exceed 4
         if (selectedFiles.length + files.length > 4) {
@@ -124,7 +155,8 @@ document.addEventListener("DOMContentLoaded", function() {
         // Add the selected files to the `selectedFiles` array
         selectedFiles = selectedFiles.concat(files);
 
-        // Update the image previews
+        // Save state to local storage whenever files are selected
+        saveState();
         updateImagePreviews();
       }
     });
@@ -150,7 +182,7 @@ document.addEventListener("DOMContentLoaded", function() {
         removeBtn.classList.add("remove-image");
         removeBtn.innerHTML = "&times;";
         removeBtn.addEventListener("click", function () {
-          removeImage(index); // Remove the image when the cross button is clicked
+          removeImage(index);
         });
 
         imgWrapper.appendChild(imgElement);
@@ -165,7 +197,8 @@ document.addEventListener("DOMContentLoaded", function() {
   // Function to remove an image from the preview and from the `selectedFiles` array
   function removeImage(index) {
     selectedFiles.splice(index, 1); // Remove the selected file
-    updateImagePreviews(); // Update the previews after removal
+    saveState(); // Save the updated state
+    updateImagePreviews();
   }
 
   // Function to enable/disable the Go button based on input
@@ -219,7 +252,7 @@ document.addEventListener("DOMContentLoaded", function() {
     formData.append('user_id', throttleUserId);
     console.log("Printing user Id...", throttleUserId);
 
-    fetch('http://127.0.0.1:8080/file_upload/get_latest_unsolved', {
+    fetch('https://lswu0lieod.execute-api.us-east-1.amazonaws.com/prod/file_upload/get_latest_unsolved', {
       method: 'POST',
       body: formData  // Send form data
     })
