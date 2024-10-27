@@ -7,6 +7,7 @@ document.addEventListener("DOMContentLoaded", function() {
   const imagePreview = document.getElementById("imagePreview");
   const dropArea = document.getElementById("dropArea"); // Drag-and-drop area
   let selectedFiles = [];
+  let sessionId;
 
   // Restore state from local storage on popup load
   restoreState();
@@ -57,23 +58,20 @@ document.addEventListener("DOMContentLoaded", function() {
 
   async function updateFilePaths(errorId, selectedFiles) {
     try {
-      // Prepare the payload with errorId
-      const payload = {
-        error_id: errorId,
-      };
+      // Initialize FormData and append the errorId
+      const formData = new FormData();
+      formData.append("error_id", errorId);
+      console.log("Updating file paths for error ID:", errorId);
   
       // Loop through selected files and add each file name as path1, path2, etc.
       selectedFiles.forEach((file, index) => {
-        payload[`path${index + 1}`] = file.name; // Only add path if file is present
+        formData.append(`image_${index + 1}`, file.name); // Append only the file name as a path
       });
   
       // Make the fetch request to the update API endpoint
       const response = await fetch("http://127.0.0.1:8080/update_file_paths", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
+        body: formData, // Send formData instead of JSON
       });
   
       // Check if the response is successful
@@ -86,7 +84,7 @@ document.addEventListener("DOMContentLoaded", function() {
     } catch (error) {
       console.error("Error updating file paths:", error);
     }
-  }
+}
 
   // Save state to local storage
   function saveState() {
@@ -172,7 +170,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
           if (response.ok) {
             const responseData = await response.json();
-            let sessionId = responseData["session_id"];
+            sessionId = responseData["session_id"];
 
             // Send a message to the background script
             chrome.runtime.sendMessage({
@@ -180,6 +178,8 @@ document.addEventListener("DOMContentLoaded", function() {
               searchQuery: errorTitle,
               sessionId: sessionId,
             });
+
+            console.log("Error uploaded successfully");
 
             // Clear storage after successful submission
             chrome.storage.local.remove(["errorTitle", "storedImages"]);
@@ -189,6 +189,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
           // Step 1: Get presigned URLs for each selected image
           for (let file of selectedFiles) {
+            console.log(`Uploading ${file.name}...`);
             // Request a presigned URL from your backend for each file
             const presignedResponse = await fetch("http://127.0.0.1:8080/generate-presigned-url", {
               method: "POST",
@@ -218,7 +219,6 @@ document.addEventListener("DOMContentLoaded", function() {
 
           // Call the function to update the file paths in the database
           updateFilePaths(sessionId, selectedFiles); 
-
         } catch (error) {
           console.error("Request failed:", error);
         } finally {
