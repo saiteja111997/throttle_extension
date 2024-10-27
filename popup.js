@@ -4,8 +4,8 @@ document.addEventListener("DOMContentLoaded", function() {
   const fullWidthButton = document.getElementById("full-width-button");
   const searchInput = document.getElementById("searchInput");
   const searchButton = document.getElementById("searchButton");
-  const imageInput = document.getElementById("imageInput");
   const imagePreview = document.getElementById("imagePreview");
+  const dropArea = document.getElementById("dropArea"); // Drag-and-drop area
   let selectedFiles = [];
 
   // Restore state from local storage on popup load
@@ -16,30 +16,86 @@ document.addEventListener("DOMContentLoaded", function() {
     chrome.storage.local.get(["errorTitle", "storedImages"], function(data) {
       if (data.errorTitle) {
         searchInput.value = data.errorTitle;
-        validateInput(); // Enable the "Go" button if input is valid
+        validateInput();
       }
-
       if (data.storedImages) {
         selectedFiles = data.storedImages.map(file => {
           const blob = new Blob([new Uint8Array(file.buffer)], { type: file.type });
-          const newFile = new File([blob], file.name, { type: file.type });
-          return newFile;
+          return new File([blob], file.name, { type: file.type });
         });
         updateImagePreviews();
       }
     });
   }
 
-  // Function to save the state to local storage
-  function saveState() {
-    const filesToStore = selectedFiles.map(file => {
-      return file.arrayBuffer().then(buffer => ({
-        name: file.name,
-        type: file.type,
-        buffer: Array.from(new Uint8Array(buffer))
-      }));
-    });
+  // Drag-and-drop event listeners
+  dropArea.addEventListener("dragover", (event) => {
+    event.preventDefault();
+    dropArea.classList.add("highlight");
+  });
 
+  dropArea.addEventListener("dragleave", () => {
+    dropArea.classList.remove("highlight");
+  });
+
+  dropArea.addEventListener("drop", (event) => {
+    event.preventDefault();
+    dropArea.classList.remove("highlight");
+    
+    const files = Array.from(event.dataTransfer.files);
+    
+    // Limit to 4 files
+    if (selectedFiles.length + files.length > 4) {
+      alert("You can only upload a maximum of 4 images.");
+      return;
+    }
+    
+    selectedFiles = selectedFiles.concat(files);
+    saveState();
+    updateImagePreviews();
+  });
+
+  async function updateFilePaths(errorId, selectedFiles) {
+    try {
+      // Prepare the payload with errorId
+      const payload = {
+        error_id: errorId,
+      };
+  
+      // Loop through selected files and add each file name as path1, path2, etc.
+      selectedFiles.forEach((file, index) => {
+        payload[`path${index + 1}`] = file.name; // Only add path if file is present
+      });
+  
+      // Make the fetch request to the update API endpoint
+      const response = await fetch("http://127.0.0.1:8080/update_file_paths", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+  
+      // Check if the response is successful
+      if (response.ok) {
+        const result = await response.json();
+        console.log("File paths updated successfully:", result);
+      } else {
+        console.error("Failed to update file paths:", response.statusText);
+      }
+    } catch (error) {
+      console.error("Error updating file paths:", error);
+    }
+  }
+
+  // Save state to local storage
+  function saveState() {
+    const filesToStore = selectedFiles.map(file => file.arrayBuffer().then(buffer => ({
+      name: file.name,
+      type: file.type,
+      buffer: Array.from(new Uint8Array(buffer))
+    })));
+    
     Promise.all(filesToStore).then(storedImages => {
       chrome.storage.local.set({
         errorTitle: searchInput.value.trim(),
@@ -76,25 +132,11 @@ document.addEventListener("DOMContentLoaded", function() {
       if (!searchButton.disabled) {
         const errorTitle = searchInput.value.trim();
 
-        // Ensure image input exists
-        if (!imageInput) {
-          console.error("imageInput is not found. Check if the element exists in the DOM.");
-          return;
-        }
-
         // Get throttle_user_id from chrome.storage.local
         const throttleUserId = await getThrottleUserId();
         if (!throttleUserId) {
           console.error("No throttle_user_id found.");
           return;
-        }
-
-        // Prepare the form data
-        const formData = new FormData();
-        formData.append("text", errorTitle);
-        formData.append("userId", throttleUserId);
-        for (let i = 0; i < selectedFiles.length; i++) {
-          formData.append("images", selectedFiles[i]);
         }
 
         // Disable the popup content to prevent interactions
@@ -108,8 +150,22 @@ document.addEventListener("DOMContentLoaded", function() {
         spinner.classList.add("button-spinner");
         searchButton.appendChild(spinner);
 
+        // Array to store uploaded image URLs
+        const uploadedImageUrls = [];
+
         try {
-          const response = await fetch("https://lswu0lieod.execute-api.us-east-1.amazonaws.com/prod/file_upload/upload_error", {
+          // Step 3: Prepare FormData for final submission
+          const formData = new FormData();
+          formData.append("text", errorTitle);
+          formData.append("userId", throttleUserId);
+          
+          // Append uploaded image URLs to FormData
+          uploadedImageUrls.forEach((url, index) => {
+            formData.append(`imageUrl${index + 1}`, url);
+          });
+
+          // Step 4: Send the remaining form data to the backend
+          const response = await fetch("http://127.0.0.1:8080/file_upload/upload_error", {
             method: "POST",
             body: formData,
           });
@@ -130,6 +186,39 @@ document.addEventListener("DOMContentLoaded", function() {
           } else {
             console.error("Server responded with an error:", response.statusText);
           }
+
+          // Step 1: Get presigned URLs for each selected image
+          for (let file of selectedFiles) {
+            // Request a presigned URL from your backend for each file
+            const presignedResponse = await fetch("http://127.0.0.1:8080/generate-presigned-url", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ fileName: file.name, errorId: sessionId}),
+            });
+            
+            const presignedData = await presignedResponse.json();
+            const presignedUrl = presignedData.url;
+
+            if (!presignedUrl) {
+              console.error("Failed to get presigned URL.");
+              continue;
+            }
+
+            // Step 2: Use the presigned URL to upload the file
+            await fetch(presignedUrl, {
+              method: "PUT",
+              headers: { "Content-Type": file.type },
+              body: file,
+            });
+            
+            // Store the S3 object URL after upload
+            uploadedImageUrls.push(presignedData.fileUrl);  // Assuming presignedData.fileUrl has the S3 URL
+            console.log(`Uploaded ${file.name} successfully`);
+          }
+
+          // Call the function to update the file paths in the database
+          updateFilePaths(sessionId, selectedFiles); 
+
         } catch (error) {
           console.error("Request failed:", error);
         } finally {
@@ -140,27 +229,8 @@ document.addEventListener("DOMContentLoaded", function() {
         }
       }
     });
-
-    // Handle image input changes for preview
-    imageInput.addEventListener("change", function () {
-      if (imageInput.files.length > 0) {
-        const files = Array.from(imageInput.files);
-
-        // Make sure the total selected files don't exceed 4
-        if (selectedFiles.length + files.length > 4) {
-          alert("You can only upload a maximum of 4 images.");
-          return;
-        }
-
-        // Add the selected files to the `selectedFiles` array
-        selectedFiles = selectedFiles.concat(files);
-
-        // Save state to local storage whenever files are selected
-        saveState();
-        updateImagePreviews();
-      }
-    });
   }
+
 
   // Function to update the image previews
   function updateImagePreviews() {

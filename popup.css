@@ -310,6 +310,23 @@ body {
   opacity: 0.6;
 }
 
+/* Drop area styles */
+.drop-area {
+  border: 2px dashed #aaa;
+  padding: 20px;
+  text-align: center;
+  color: #555;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  border-radius: 8px;
+}
+
+.drop-area.highlight {
+  background-color: #f0f0f0;
+  border-color: #555;
+}
+
+
 
 
 
