@@ -65,13 +65,13 @@ document.addEventListener("DOMContentLoaded", function() {
   
       // Loop through selected files and add each file name as path1, path2, etc.
       selectedFiles.forEach((file, index) => {
-        formData.append(`image_${index + 1}`, file.name); // Append only the file name as a path
+        formData.append(`image${index + 1}`, file.name); // Append only the file name as a path
       });
   
       // Make the fetch request to the update API endpoint
       const response = await fetch("http://127.0.0.1:8080/update_file_paths", {
         method: "POST",
-        body: formData, // Send formData instead of JSON
+        body: formData, 
       });
   
       // Check if the response is successful
