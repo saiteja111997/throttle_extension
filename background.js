@@ -197,6 +197,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
     if (message.action === "oldSessionStarted") {
       sessionActive = true
+      console.log("Entered the code!!")
 
       const searchUrl = `https://www.google.com/search?q=${encodeURIComponent(message.title)}`;
       chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {

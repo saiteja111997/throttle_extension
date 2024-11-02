@@ -94,7 +94,7 @@ async function getText() {
 
     formData.append("text", selectedText);
     formData.append("error_id", session_id);
-    formData.append("user_id", userId);
+    formData.append("type", "useraction")
 
     console.log("Printing error id : ", session_id)
 
@@ -221,18 +221,104 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     `;
 
     document.getElementById("cancel-icon").addEventListener("click", () => {
-      // Handle cancel action
-      timerContainer.remove();
-      chrome.runtime.sendMessage({
-        action: "removeTimer",
+      // Create a backdrop to cover the entire screen
+      const backdrop = document.createElement("div");
+      backdrop.style.position = "fixed";
+      backdrop.style.top = "0";
+      backdrop.style.left = "0";
+      backdrop.style.width = "100%";
+      backdrop.style.height = "100%";
+      backdrop.style.backgroundColor = "rgba(0, 0, 0, 0.5)";
+      backdrop.style.display = "flex";
+      backdrop.style.alignItems = "center";
+      backdrop.style.justifyContent = "center";
+      backdrop.style.zIndex = "9999";
+    
+      // Create a popup container
+      const popupContainer = document.createElement("div");
+      popupContainer.style.backgroundColor = "#fff";
+      popupContainer.style.padding = "20px";
+      popupContainer.style.borderRadius = "8px";
+      popupContainer.style.boxShadow = "0 0 15px rgba(0, 0, 0, 0.3)";
+      popupContainer.style.textAlign = "center";
+    
+      // Add a message to the popup
+      const message = document.createElement("p");
+      message.textContent = "Are you sure you want to delete the error?";
+      popupContainer.appendChild(message);
+    
+      // Create "Yes" button
+      const yesButton = document.createElement("button");
+      yesButton.textContent = "Yes";
+      yesButton.style.margin = "10px";
+      yesButton.style.padding = "10px 15px";
+      yesButton.style.backgroundColor = "#ff4d4d";
+      yesButton.style.color = "#fff";
+      yesButton.style.border = "none";
+      yesButton.style.borderRadius = "5px";
+      yesButton.style.cursor = "pointer";
+    
+      // Create "No" button
+      const noButton = document.createElement("button");
+      noButton.textContent = "No";
+      noButton.style.margin = "10px";
+      noButton.style.padding = "10px 15px";
+      noButton.style.backgroundColor = "#ccc";
+      noButton.style.color = "#000";
+      noButton.style.border = "none";
+      noButton.style.borderRadius = "5px";
+      noButton.style.cursor = "pointer";
+    
+      // Append buttons to the popup container
+      popupContainer.appendChild(yesButton);
+      popupContainer.appendChild(noButton);
+    
+      // Append the popup container and backdrop to the body
+      backdrop.appendChild(popupContainer);
+      document.body.appendChild(backdrop);
+    
+      // Event listener for "No" button: Close the popup
+      noButton.addEventListener("click", () => {
+        document.body.removeChild(backdrop);
+      });
+    
+      // Event listener for "Yes" button: Make the API call and send the message
+      yesButton.addEventListener("click", async () => {
+        try {
+          // Make the API call to your backend
+          const response = await fetch("http://127.0.0.1:8080/delete_error", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ errorId: "your_error_id_here" }), // Replace with your error ID
+          });
+    
+          if (response.ok) {
+            // If the API call is successful, send the message to remove the timer
+            timerContainer.remove();
+            chrome.runtime.sendMessage({
+              action: "removeTimer",
+            });
+            console.log("Error deleted successfully");
+          } else {
+            console.error("Failed to delete the error:", response.statusText);
+          }
+        } catch (error) {
+          console.error("Error making API call:", error);
+        } finally {
+          // Remove the popup after the action is completed
+          document.body.removeChild(backdrop);
+        }
       });
     });
+    
 
     document.getElementById("tick-icon").addEventListener("click", () => {
       // Handle tick action (e.g., mark as done and open new page)
       console.log("Printing the error id before opening the browser tab, errorID : ", message.id);
-      // const url = `https://thethrottle.ai/#/preDocEdit/?error_id=${message.id}`;
-      const url = `http://localhost:3000/#/preDocEdit/?error_id=${message.id}`;
+      const url = `https://thethrottle.ai/#/preDocEdit/?error_id=${message.id}`;
+      // const url = `http://localhost:3000/#/preDocEdit/?error_id=${message.id}`;
       window.open(url, '_blank');
       timerContainer.remove();
       chrome.runtime.sendMessage({

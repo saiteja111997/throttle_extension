@@ -69,7 +69,7 @@ document.addEventListener("DOMContentLoaded", function() {
       });
   
       // Make the fetch request to the update API endpoint
-      const response = await fetch("http://127.0.0.1:8080/update_file_paths", {
+      const response = await fetch("https://lswu0lieod.execute-api.us-east-1.amazonaws.com/prod/update_file_paths", {
         method: "POST",
         body: formData, 
       });
@@ -120,116 +120,114 @@ document.addEventListener("DOMContentLoaded", function() {
   }
 
   // Enable Go button when the user types in the search input
-  if (searchInput && searchButton) {
-    searchInput.addEventListener("input", () => {
-      validateInput();
-      saveState(); // Save the current state whenever the input changes
-    });
+if (searchInput && searchButton) {
+  searchInput.addEventListener("input", () => {
+    validateInput();
+    saveState(); // Save the current state whenever the input changes
+  });
 
-    searchButton.addEventListener("click", async function () {
-      if (!searchButton.disabled) {
-        const errorTitle = searchInput.value.trim();
+  searchButton.addEventListener("click", async function () {
+    if (!searchButton.disabled) {
+      const errorTitle = searchInput.value.trim();
 
-        // Get throttle_user_id from chrome.storage.local
-        const throttleUserId = await getThrottleUserId();
-        if (!throttleUserId) {
-          console.error("No throttle_user_id found.");
-          return;
-        }
-
-        // Disable the popup content to prevent interactions
-        const popupContent = document.body;
-        popupContent.classList.add("popup-disabled");
-
-        // Change button text to loading and show spinner
-        searchButton.disabled = true;
-        searchButton.textContent = "";
-        const spinner = document.createElement("span");
-        spinner.classList.add("button-spinner");
-        searchButton.appendChild(spinner);
-
-        // Array to store uploaded image URLs
-        const uploadedImageUrls = [];
-
-        try {
-          // Step 3: Prepare FormData for final submission
-          const formData = new FormData();
-          formData.append("text", errorTitle);
-          formData.append("userId", throttleUserId);
-          
-          // Append uploaded image URLs to FormData
-          uploadedImageUrls.forEach((url, index) => {
-            formData.append(`imageUrl${index + 1}`, url);
-          });
-
-          // Step 4: Send the remaining form data to the backend
-          const response = await fetch("http://127.0.0.1:8080/file_upload/upload_error", {
-            method: "POST",
-            body: formData,
-          });
-
-          if (response.ok) {
-            const responseData = await response.json();
-            sessionId = responseData["session_id"];
-
-            // Send a message to the background script
-            chrome.runtime.sendMessage({
-              action: "reloadTab",
-              searchQuery: errorTitle,
-              sessionId: sessionId,
-            });
-
-            console.log("Error uploaded successfully");
-
-            // Clear storage after successful submission
-            chrome.storage.local.remove(["errorTitle", "storedImages"]);
-          } else {
-            console.error("Server responded with an error:", response.statusText);
-          }
-
-          // Step 1: Get presigned URLs for each selected image
-          for (let file of selectedFiles) {
-            console.log(`Uploading ${file.name}...`);
-            // Request a presigned URL from your backend for each file
-            const presignedResponse = await fetch("http://127.0.0.1:8080/generate-presigned-url", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ fileName: file.name, errorId: sessionId}),
-            });
-            
-            const presignedData = await presignedResponse.json();
-            const presignedUrl = presignedData.url;
-
-            if (!presignedUrl) {
-              console.error("Failed to get presigned URL.");
-              continue;
-            }
-
-            // Step 2: Use the presigned URL to upload the file
-            await fetch(presignedUrl, {
-              method: "PUT",
-              headers: { "Content-Type": file.type },
-              body: file,
-            });
-            
-            // Store the S3 object URL after upload
-            uploadedImageUrls.push(presignedData.fileUrl);  // Assuming presignedData.fileUrl has the S3 URL
-            console.log(`Uploaded ${file.name} successfully`);
-          }
-
-          // Call the function to update the file paths in the database
-          updateFilePaths(sessionId, selectedFiles); 
-        } catch (error) {
-          console.error("Request failed:", error);
-        } finally {
-          // Re-enable the form elements and reset the button text after the API call completes
-          popupContent.classList.remove("popup-disabled");
-          searchButton.disabled = false;
-          searchButton.textContent = "Go";
-        }
+      // Get throttle_user_id from chrome.storage.local
+      const throttleUserId = await getThrottleUserId();
+      if (!throttleUserId) {
+        console.error("No throttle_user_id found.");
+        return;
       }
-    });
-  }
+
+      // Disable the popup content to prevent interactions
+      const popupContent = document.body;
+      popupContent.classList.add("popup-disabled");
+
+      // Change button text to loading and show spinner
+      searchButton.disabled = true;
+      searchButton.textContent = "";
+      const spinner = document.createElement("span");
+      spinner.classList.add("button-spinner");
+      searchButton.appendChild(spinner);
+
+      let sessionId;
+
+      try {
+        // Step 1: Upload the error details to the database
+        const formData = new FormData();
+        formData.append("text", errorTitle);
+        formData.append("userId", throttleUserId);
+
+        const errorResponse = await fetch("https://lswu0lieod.execute-api.us-east-1.amazonaws.com/prod/file_upload/upload_error", {
+          method: "POST",
+          body: formData,
+        });
+
+        if (errorResponse.ok) {
+          const errorData = await errorResponse.json();
+          sessionId = errorData["session_id"];
+          console.log("Error uploaded successfully with sessionId:", sessionId);
+        } else {
+          console.error("Failed to upload error details:", errorResponse.statusText);
+          return; // Exit if the error details cannot be uploaded
+        }
+
+        // Step 2: Get presigned URLs and upload the files
+        for (let file of selectedFiles) {
+          console.log(`Uploading ${file.name}...`);
+
+          // Request a presigned URL from your backend for each file
+          const presignedResponse = await fetch("https://lswu0lieod.execute-api.us-east-1.amazonaws.com/prod/generate-presigned-url", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ fileName: file.name, errorId: sessionId }),
+          });
+
+          const presignedData = await presignedResponse.json();
+          const presignedUrl = presignedData.url;
+
+          if (!presignedUrl) {
+            console.error("Failed to get presigned URL.");
+            continue;
+          } else {
+            console.log("Response from the server - Presigned url:", presignedUrl);
+          }
+
+          // Use the presigned URL to upload the file
+          await fetch(presignedUrl, {
+            method: "PUT",
+            headers: { "Content-Type": file.type },
+            body: file,
+          });
+
+          
+          console.log(`Uploaded ${file.name} successfully`);
+        }
+
+        // Step 3: Update the file paths in the database
+        await updateFilePaths(sessionId, selectedFiles);
+
+        // Step 4: Send the message to the background script after all steps are complete
+        chrome.runtime.sendMessage({
+          action: "reloadTab",
+          searchQuery: errorTitle,
+          sessionId: sessionId,
+        });
+
+        console.log("All steps completed successfully, message sent to background script");
+
+        // Clear storage after successful submission
+        chrome.storage.local.remove(["errorTitle", "storedImages"]);
+      } catch (error) {
+        console.error("Request failed:", error);
+      } finally {
+        // Re-enable the form elements and reset the button text after the API call completes
+        popupContent.classList.remove("popup-disabled");
+        searchButton.disabled = false;
+        searchButton.textContent = "Go";
+      }
+    }
+  });
+}
+
 
 
   // Function to update the image previews
@@ -340,7 +338,8 @@ document.addEventListener("DOMContentLoaded", function() {
             </div>
             <button class="incomplete-button"></button>`;
           li.addEventListener("click", function() {
-            sendMessageToContentScript(error.id, error.title);
+            sendMessageToBackGroundScript(error.id, error.title);
+            
           });
           errorList.appendChild(li);
         });
@@ -350,22 +349,12 @@ document.addEventListener("DOMContentLoaded", function() {
 
 
   // Function to send message to content script
-  function sendMessageToContentScript(errorId, title) {
-    chrome.tabs.query({ currentWindow: true, active: true }, function(tabs) {
-      var activeTab = tabs[0];
-      chrome.tabs.sendMessage(activeTab.id, { 
-        action: "startSession",
-        title: title,
-        id: errorId,
-        status: "old"
-      }, function(response) {
-        if (chrome.runtime.lastError) {
-          console.error(chrome.runtime.lastError);
-        } else {
-          console.log("Message sent successfully with ID: " + errorId);
-        }
-      });
-      window.close();
+  function sendMessageToBackGroundScript(errorId, title) {
+    // Send a message to the background script
+    chrome.runtime.sendMessage({
+      action: "oldSessionStarted",
+      title: title,
+      id: errorId,
     });
   }
 
@@ -374,16 +363,16 @@ document.addEventListener("DOMContentLoaded", function() {
 
   // Event listener for login/register button
   document.getElementById("login-button").addEventListener("click", function() {
-    chrome.tabs.create({ url: "http://127.0.0.1:3000/login" });
+    chrome.tabs.create({ url: "https://thethrottle.ai/#/login" });
   });
 
   // Event listener for going to the dashboard
   document.getElementById("goToDashboardButton").addEventListener("click", function() {
-    chrome.tabs.create({ url: "http://localhost:3000/dashboard" });
+    chrome.tabs.create({ url: "https://thethrottle.ai/#/dashboard" });
   });
 
   // Event listener for logout button
   document.getElementById("logout-button").addEventListener("click", function() {
-    chrome.tabs.create({ url: "http://localhost:3000/logout" });
+    chrome.tabs.create({ url: "https://thethrottle.ai/#/logout" });
   });
 });
