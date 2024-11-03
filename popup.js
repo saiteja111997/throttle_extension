@@ -373,6 +373,6 @@ if (searchInput && searchButton) {
 
   // Event listener for logout button
   document.getElementById("logout-button").addEventListener("click", function() {
-    chrome.tabs.create({ url: "https://thethrottle.ai/#/logout" });
+    chrome.tabs.create({ url: "http://localhost:3000/#/logout" });
   });
 });

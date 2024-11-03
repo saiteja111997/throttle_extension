@@ -285,13 +285,14 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       // Event listener for "Yes" button: Make the API call and send the message
       yesButton.addEventListener("click", async () => {
         try {
+
+          const formData = new FormData();
+
+          formData.append("error_id", session_id)
           // Make the API call to your backend
           const response = await fetch("http://127.0.0.1:8080/delete_error", {
             method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ errorId: "your_error_id_here" }), // Replace with your error ID
+            body: formData,
           });
     
           if (response.ok) {
